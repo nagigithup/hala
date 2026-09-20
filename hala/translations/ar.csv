@@ -1,0 +1,164 @@
+Items,الأصناف
+Customers,العملاء
+Suppliers,الموردون
+Purchasing,المشتريات
+Sales,المبيعات
+BOMs,قوائم المواد
+Stock Entries,حركات المخزون
+Payment Entries,سندات القبض والصرف
+Journal Entries,قيود اليومية
+You do not have access to the Hala portal.,ليس لديك صلاحية الدخول إلى بوابة هلا.
+Document type is not available in Hala.,نوع المستند غير متاح في بوابة هلا.
+Use the explicit Submit or Cancel action to change document status.,استخدم إجراء الاعتماد أو الإلغاء الصريح لتغيير حالة المستند.
+Unsupported document action.,إجراء المستند غير مدعوم.
+Invalid link target.,رابط المستند غير صالح.
+Party Type must be Customer or Supplier.,يجب أن يكون نوع الطرف عميلاً أو مورداً.
+Hala,هلا
+Overview,نظرة عامة
+BOM and Manufacturing,قوائم المواد والتصنيع
+Stock,المخزون
+Payments,المدفوعات
+Accounting,الحسابات
+New Item,صنف جديد
+New Customer,عميل جديد
+New Supplier,مورد جديد
+New Purchase Order,أمر شراء جديد
+New Purchase Receipt,استلام شراء جديد
+New Purchase Invoice,فاتورة شراء جديدة
+New Quotation,عرض سعر جديد
+New Sales Order,أمر بيع جديد
+New Delivery Note,إذن تسليم جديد
+New Sales Invoice,فاتورة مبيعات جديدة
+New Stock Entry,حركة مخزون جديدة
+New Payment Entry,سند قبض أو صرف جديد
+New Journal Entry,قيد يومية جديد
+New BOM,قائمة مواد جديدة
+Active Items,الأصناف النشطة
+Draft Purchase Invoices,فواتير الشراء المسودة
+Unpaid Purchase Invoices,فواتير الشراء غير المدفوعة
+Draft Sales Invoices,فواتير المبيعات المسودة
+Unpaid Sales Invoices,فواتير المبيعات غير المدفوعة
+Low Stock Items,أصناف منخفضة المخزون
+Item,الصنف
+UOM,وحدة القياس
+Item Price,سعر الصنف
+Price List,قائمة الأسعار
+Stock Balance,رصيد المخزون
+Stock Ledger,دفتر حركة المخزون
+Customer,العميل
+Customer Ledger,كشف حساب العميل
+Accounts Receivable,الذمم المدينة
+Customer Outstanding,مستحقات العملاء
+Supplier,المورد
+Accounts Payable,الذمم الدائنة
+Supplier Outstanding,مستحقات الموردين
+Purchase Order,أمر شراء
+Purchase Receipt,استلام شراء
+Purchase Invoice,فاتورة شراء
+Purchase Returns,مرتجعات الشراء
+Landed Cost Voucher,سند تكلفة الوصول
+Quotation,عرض سعر
+Sales Order,أمر بيع
+Delivery Note,إذن تسليم
+Sales Invoice,فاتورة مبيعات
+Sales Returns,مرتجعات المبيعات
+Point of Sale,نقطة البيع
+BOM,قائمة المواد
+Stock Entry for Manufacture,حركة مخزون للتصنيع
+Stock Entry,حركة مخزون
+Stock Reconciliation,تسوية المخزون
+Warehouse,المستودع
+Stock Ageing,تقادم المخزون
+Batch,الدفعة
+Serial Number,الرقم التسلسلي
+Pick List,قائمة الالتقاط
+Delivery Trip,رحلة التوصيل
+Payment Entry,سند قبض أو صرف
+Payment Reconciliation,تسوية المدفوعات
+General Ledger,دفتر الأستاذ العام
+Payments Received,المقبوضات من العملاء
+Payments Made,المدفوعات للموردين
+Receive Payment,استلام دفعة
+Pay Supplier,دفع للمورد
+Internal Transfer,تحويل داخلي
+Journal Entry,قيد يومية
+Trial Balance,ميزان المراجعة
+Balance Sheet,الميزانية العمومية
+Profit and Loss Statement,قائمة الأرباح والخسائر
+Chart of Accounts,دليل الحسابات
+Account,الحساب
+Cost Center,مركز التكلفة
+Fiscal Year,السنة المالية
+Home,الرئيسية
+Items and Stock,الأصناف والمخزون
+Manufacturing,التصنيع
+Customers and Sales,العملاء والمبيعات
+Suppliers and Purchasing,الموردون والمشتريات
+Finance,المالية
+Stock Movement,حركة المخزون
+Work Order,أمر تصنيع
+Manufacturing Stock Entries,حركات مخزون التصنيع
+Quotations,عروض الأسعار
+Sales Orders,أوامر البيع
+Sales Invoices,فواتير المبيعات
+Customer Receipts,المقبوضات من العملاء
+Purchase Orders,أوامر الشراء
+Purchase Receipts,استلامات الشراء
+Purchase Invoices,فواتير الشراء
+Supplier Payments,دفعات الموردين
+Supplier Ledger,كشف حساب المورد
+Payment Entries,سندات القبض والصرف
+Receipt Vouchers,سندات القبض
+Payment Vouchers,سندات الصرف
+Quick Manufacturing,التصنيع المبسط
+Quick Manufacture,تصنيع مبسط
+Production Terminal,محطة الإنتاج
+"Select a finished item, quantity and warehouses. ERPNext will handle the stock entry and valuation.",حدد المنتج النهائي والكمية والمستودعات. سيتولى ERPNext حركة المخزون والتقييم.
+Finished Item,الصنف المراد تصنيعه
+Manufacturing Quantity,كمية التصنيع
+Finished Item UOM,وحدة المنتج النهائي
+Source Warehouse,مستودع المواد الخام
+Target Warehouse,مستودع المنتج النهائي
+Posting Date,تاريخ التصنيع
+Posting Time,وقت التصنيع
+Remarks,ملاحظات
+Open BOM,فتح قائمة المواد
+Create BOM,إنشاء قائمة مواد
+Required Materials,المواد المطلوبة
+Quantities and availability in the selected source warehouse,الكميات والتوفر في مستودع المواد الخام المحدد
+Refresh,تحديث
+Complete the fields above to preview required materials.,أكمل الحقول أعلاه لمعاينة المواد المطلوبة.
+No submitted BOM is available for this item.,لا توجد قائمة مواد BOM معتمدة لهذا الصنف.
+BOM Required,قائمة المواد مطلوبة
+Loading manufacturing details...,جارٍ تحميل تفاصيل التصنيع...
+Calculating required materials...,جارٍ حساب المواد المطلوبة...
+Expected Finished Quantity,كمية المنتج المتوقعة
+Raw Materials Count,عدد المواد الخام
+Material Shortages,نواقص المواد
+Estimated Manufacturing Cost,تكلفة التصنيع التقديرية
+Required Qty,الكمية المطلوبة
+Stock Qty,الكمية المتوفرة
+Difference / Shortage,الفرق / النقص
+Available,متوفر
+Short {0},نقص {0}
+Shortage allowed by settings,النقص مسموح حسب الإعدادات
+Available material quantity is lower than the required quantity.,الكمية المتوفرة من المادة أقل من الكمية المطلوبة.
+Negative stock is allowed by ERPNext settings. The final submission will use standard validation.,المخزون السالب مسموح حسب إعدادات ERPNext. سيطبق الاعتماد التحقق القياسي.
+Materials are available for manufacturing.,المواد متوفرة للتصنيع.
+Manufacture,تصنيع وإضافة للمخزون
+Raw materials will be consumed and the finished item will be added to stock. Do you want to continue?,سيتم استهلاك المواد الخام وإضافة المنتج النهائي إلى المخزون. هل تريد المتابعة؟
+Confirm Manufacturing,تأكيد التصنيع
+Creating and submitting Manufacture Stock Entry...,جارٍ إنشاء واعتماد حركة مخزون التصنيع...
+Manufacturing completed successfully,تم التصنيع وإضافة المنتج النهائي للمخزون بنجاح
+View Stock Entry,عرض حركة المخزون
+New Manufacturing,تصنيع جديد
+Created using Hala Quick Manufacturing,تم الإنشاء بواسطة التصنيع المبسط في هلا
+Only an active submitted BOM can be used.,يمكن استخدام قائمة مواد نشطة ومعتمدة فقط.
+The selected BOM does not belong to the finished item.,قائمة المواد المحددة لا تخص الصنف النهائي.
+The finished item is disabled.,الصنف النهائي معطل.
+The finished item must be a stock item.,يجب أن يكون الصنف النهائي صنف مخزون.
+Please select an enabled non-group warehouse.,يرجى اختيار مستودع فعال وغير تجميعي.
+Warehouse {0} does not belong to company {1}.,المستودع {0} لا يتبع الشركة {1}.
+Please select the source and finished-goods warehouses.,يرجى تحديد مستودع المواد الخام ومستودع المنتج النهائي.
+Manufacturing quantity must be greater than zero.,يجب أن تكون كمية التصنيع أكبر من صفر.
+Invalid manufacturing request identifier.,معرّف طلب التصنيع غير صالح.

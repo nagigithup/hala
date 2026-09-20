@@ -1,0 +1,13 @@
+[
+ {
+  "desk_access": 1,
+  "disabled": 0,
+  "doctype": "Role",
+  "home_page": null,
+  "is_custom": 1,
+  "name": "Hala Portal User",
+  "role_name": "Hala Portal User",
+  "two_factor_auth": 0
+ }
+]
+

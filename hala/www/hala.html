@@ -1,0 +1,34 @@
+{% extends "templates/web.html" %}
+{% block title %}Hala{% endblock %}
+{% block head_include %}
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#116466">
+<link rel="stylesheet" href="/assets/hala/css/hala.css">
+{% endblock %}
+{% block navbar %}{% endblock %}
+{% block page_content %}
+<div id="hala-app" class="hala-shell" data-csrf-token="{{ csrf_token }}">
+  <div id="hala-overlay" class="hala-overlay" hidden></div>
+  <aside id="hala-sidebar" class="hala-sidebar" aria-label="Main navigation">
+    <div class="brand"><img src="/assets/hala/hala-logo.svg" alt=""><div><strong>Hala</strong><span data-i18n="business_portal">Business portal</span></div><button id="close-sidebar" class="icon-button mobile-only" aria-label="Close">×</button></div>
+    <nav id="hala-nav"></nav>
+    <div class="sidebar-footer"><span class="online-dot"></span><span data-i18n="live_erp">Live ERPNext data</span></div>
+  </aside>
+  <div class="hala-main">
+    <header class="hala-header">
+      <button id="open-sidebar" class="icon-button mobile-only" aria-label="Menu">☰</button>
+      <div class="global-search"><span>⌕</span><input id="global-search" autocomplete="off" data-i18n-placeholder="search_everything" placeholder="Search documents…"><div id="search-results" class="search-results" hidden></div></div>
+      <select id="company-selector" aria-label="Company"></select>
+      <button id="theme-toggle" class="icon-button" aria-label="Theme">◐</button>
+      <button id="notification-button" class="icon-button notification" aria-label="Notifications">♢<span id="notification-count">0</span></button>
+      <div class="user-menu"><button id="user-button"><span id="user-avatar">H</span><span id="user-name"></span><span>⌄</span></button><div id="user-popover" hidden><button id="language-toggle">العربية</button><a href="/app">ERPNext Desk</a><a href="/api/method/logout?redirect-to=/hala" data-i18n="logout">Log out</a></div></div>
+    </header>
+    <main id="hala-content" class="hala-content" aria-live="polite"></main>
+  </div>
+  <div id="hala-toast" class="hala-toast" role="status" hidden></div>
+  <div id="hala-loader" class="hala-loader" hidden><span></span><p data-i18n="loading">Loading…</p></div>
+</div>
+<script>window.halaPageBoot={{ boot | tojson }};</script>
+<script src="/assets/hala/js/hala.js"></script>
+{% endblock %}
+

@@ -1,0 +1,20 @@
+{
+ "content": null,
+ "doctype": "Page",
+ "idx": 0,
+ "module": "Hala",
+ "name": "hala-quick-manufacturing",
+ "page_name": "hala-quick-manufacturing",
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Stock User"},
+  {"role": "Stock Manager"},
+  {"role": "Manufacturing User"},
+  {"role": "Manufacturing Manager"}
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Quick Manufacturing"
+}

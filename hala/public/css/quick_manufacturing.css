@@ -1,0 +1,237 @@
+.hala-quick-manufacturing-page {
+	background: var(--subtle-fg);
+}
+
+.hala-qm-shell {
+	max-width: 1180px;
+	margin: 0 auto;
+	padding: 16px 4px 40px;
+}
+
+.hala-qm-hero,
+.hala-qm-card,
+.hala-qm-result {
+	background: var(--card-bg);
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius-lg);
+	box-shadow: var(--shadow-xs);
+}
+
+.hala-qm-hero {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 20px;
+	padding: 22px 24px;
+	margin-bottom: 16px;
+}
+
+.hala-qm-kicker {
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: .05em;
+}
+
+.hala-qm-hero h2,
+.hala-qm-section-heading h3,
+.hala-qm-result h3 {
+	margin: 3px 0 5px;
+	font-weight: 650;
+}
+
+.hala-qm-hero p,
+.hala-qm-section-heading p,
+.hala-qm-result p {
+	color: var(--text-muted);
+	margin: 0;
+}
+
+.hala-qm-flow {
+	display: grid;
+	place-items: center;
+	min-width: 52px;
+	height: 52px;
+	border-radius: 14px;
+	background: var(--control-bg);
+	color: var(--text-color);
+}
+
+.hala-qm-card {
+	padding: 20px 22px;
+	margin-bottom: 16px;
+}
+
+.hala-qm-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(160px, 1fr));
+	gap: 4px 18px;
+}
+
+.hala-qm-grid .frappe-control,
+.hala-qm-remarks .frappe-control {
+	margin-bottom: 10px;
+}
+
+.hala-qm-bom-actions {
+	display: flex;
+	gap: 8px;
+	margin: -2px 0 10px;
+}
+
+.hala-qm-section-heading,
+.hala-qm-actions,
+.hala-qm-result {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.hala-qm-summary {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(130px, 1fr));
+	gap: 10px;
+	margin: 18px 0;
+}
+
+.hala-qm-summary:empty {
+	display: none;
+}
+
+.hala-qm-summary > div {
+	padding: 12px 14px;
+	border-radius: var(--border-radius);
+	background: var(--control-bg);
+}
+
+.hala-qm-summary span,
+.hala-qm-summary strong,
+.hala-qm-table td > small {
+	display: block;
+}
+
+.hala-qm-summary span,
+.hala-qm-table small {
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+}
+
+.hala-qm-summary strong {
+	margin-top: 4px;
+	font-size: var(--text-lg);
+}
+
+.hala-qm-table {
+	margin-bottom: 0;
+}
+
+.hala-qm-table th {
+	white-space: nowrap;
+	font-size: var(--text-xs);
+	color: var(--text-muted);
+}
+
+.hala-qm-table td {
+	vertical-align: middle;
+}
+
+.hala-qm-table tr.has-shortage td {
+	background: var(--red-50);
+}
+
+.hala-qm-status {
+	display: inline-flex;
+	padding: 3px 8px;
+	border-radius: 999px;
+	font-size: var(--text-xs);
+	font-weight: 600;
+}
+
+.hala-qm-status.available {
+	background: var(--green-100);
+	color: var(--green-700);
+}
+
+.hala-qm-status.short {
+	background: var(--red-100);
+	color: var(--red-700);
+}
+
+.hala-qm-empty {
+	text-align: center;
+	color: var(--text-muted);
+	padding: 34px 16px;
+	border: 1px dashed var(--border-color);
+	border-radius: var(--border-radius);
+}
+
+.hala-qm-actions {
+	padding: 4px 2px 18px;
+}
+
+.hala-qm-validation {
+	min-height: 20px;
+}
+
+.hala-qm-result {
+	padding: 18px 20px;
+	border-color: var(--green-300);
+}
+
+.hala-qm-success-icon {
+	display: grid;
+	place-items: center;
+	width: 42px;
+	height: 42px;
+	border-radius: 50%;
+	background: var(--green-100);
+	color: var(--green-700);
+}
+
+.hala-qm-result-actions {
+	display: flex;
+	gap: 8px;
+	margin-inline-start: auto;
+}
+
+.hala-qm-confirm {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 6px 14px;
+	margin: 14px 0 0;
+}
+
+.hala-qm-confirm dt {
+	color: var(--text-muted);
+	font-weight: 500;
+}
+
+.hala-qm-confirm dd {
+	margin: 0;
+	font-weight: 600;
+}
+
+[dir="rtl"] .hala-qm-shell,
+[dir="rtl"] .hala-qm-table {
+	direction: rtl;
+	text-align: right;
+}
+
+@media (max-width: 991px) {
+	.hala-qm-grid,
+	.hala-qm-summary {
+		grid-template-columns: repeat(2, minmax(150px, 1fr));
+	}
+}
+
+@media (max-width: 575px) {
+	.hala-qm-shell { padding-top: 8px; }
+	.hala-qm-hero, .hala-qm-card, .hala-qm-result { padding: 16px; }
+	.hala-qm-grid, .hala-qm-summary { grid-template-columns: 1fr; }
+	.hala-qm-flow { display: none; }
+	.hala-qm-section-heading, .hala-qm-actions, .hala-qm-result { align-items: stretch; flex-direction: column; }
+	.hala-qm-actions .btn, .hala-qm-result-actions, .hala-qm-result-actions .btn { width: 100%; }
+	.hala-qm-result-actions { flex-direction: column; margin-inline-start: 0; }
+}

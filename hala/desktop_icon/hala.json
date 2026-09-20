@@ -1,0 +1,20 @@
+{
+ "app": "hala",
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon": "store",
+ "icon_type": "Link",
+ "idx": 5,
+ "label": "Hala",
+ "link_to": "Hala",
+ "link_type": "Workspace Sidebar",
+ "logo_url": "/assets/hala/hala-logo.svg",
+ "name": "Hala",
+ "restrict_removal": 0,
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Hala Portal User"}
+ ],
+ "sidebar": "Hala",
+ "standard": 1
+}
