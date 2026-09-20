@@ -37,7 +37,8 @@ class TestQuickManufacturing(IntegrationTestCase):
 	def setUp(self):
 		frappe.set_user("Administrator")
 
-	def make_recipe(self):
+	@staticmethod
+	def make_recipe():
 		suffix = frappe.generate_hash(length=8)
 		raw_material = make_test_item(
 			f"_Test Hala QM RM {suffix}",
@@ -81,6 +82,7 @@ class TestQuickManufacturing(IntegrationTestCase):
 			qty=20,
 			rate=10,
 			company=COMPANY,
+			posting_time="00:00:00",
 		)
 		return raw_material, finished_item, bom
 
@@ -89,6 +91,7 @@ class TestQuickManufacturing(IntegrationTestCase):
 		context = get_context(item_code=finished_item.name)
 		self.assertEqual(context["bom_no"], bom.name)
 		self.assertEqual(context["finished_uom"], "Kg")
+		self.assertRegex(context["posting_time"], r"^\d{2}:\d{2}:\d{2}$")
 
 		five_kg = preview(
 			finished_item.name,
@@ -128,6 +131,7 @@ class TestQuickManufacturing(IntegrationTestCase):
 			self.assertEqual(stock_entry.stock_entry_type, "Manufacture")
 			self.assertEqual(stock_entry.bom_no, bom.name)
 			self.assertAlmostEqual(stock_entry.fg_completed_qty, quantity)
+			self.assertEqual(stock_entry.posting_time.microseconds, 0)
 			self.assertEqual(stock_entry.get("work_order"), None)
 			self.assertEqual(stock_entry.custom_hala_manufacturing_request_id, request_id)
 			self.assertTrue(any(row.s_warehouse == SOURCE_WAREHOUSE for row in stock_entry.items))

@@ -118,7 +118,7 @@ class HalaQuickManufacturing {
 			fieldtype: "Date", label: __("Posting Date"), reqd: 1, default: frappe.datetime.get_today(),
 		});
 		this.make_control("posting_time", {
-			fieldtype: "Time", label: __("Posting Time"), reqd: 1, default: frappe.datetime.now_time(),
+			fieldtype: "Time", label: __("Posting Time"), reqd: 1, default: this.current_time(),
 		});
 		this.make_control("remarks", {
 			fieldtype: "Small Text", label: __("Remarks"),
@@ -159,6 +159,10 @@ class HalaQuickManufacturing {
 		return this.controls[fieldname].set_value(value || "");
 	}
 
+	current_time(value = null) {
+		return String(value || frappe.datetime.now_time() || "").split(".")[0];
+	}
+
 	async load_context(item_code = null, bom_no = null) {
 		if (this.loading_context) return;
 		this.loading_context = true;
@@ -177,7 +181,7 @@ class HalaQuickManufacturing {
 			await this.set_value("finished_uom", message.finished_uom);
 			await this.set_value("bom_no", message.bom_no);
 			if (!this.value("posting_date")) await this.set_value("posting_date", message.posting_date);
-			if (!this.value("posting_time")) await this.set_value("posting_time", message.posting_time);
+			if (!this.value("posting_time")) await this.set_value("posting_time", this.current_time(message.posting_time));
 			this.update_bom_actions();
 			if (message.item_code && !message.boms.length) {
 				this.show_missing_bom();
@@ -374,7 +378,7 @@ class HalaQuickManufacturing {
 		for (const field of ["item_code", "bom_no", "finished_uom", "source_warehouse", "target_warehouse", "remarks"]) await this.set_value(field, "");
 		await this.set_value("quantity", 1);
 		await this.set_value("posting_date", frappe.datetime.get_today());
-		await this.set_value("posting_time", frappe.datetime.now_time());
+		await this.set_value("posting_time", this.current_time());
 		this.clear_preview();
 	}
 }

@@ -18,6 +18,7 @@
 
   {"child": 0, "collapsible": 1, "icon": "factory", "indent": 1, "keep_closed": 1, "label": "Manufacturing", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
   {"child": 1, "collapsible": 1, "icon": "badge-plus", "indent": 0, "keep_closed": 0, "label": "Quick Manufacturing", "link_to": "hala-quick-manufacturing", "link_type": "Page", "show_arrow": 0, "type": "Link"},
+  {"child": 1, "collapsible": 1, "icon": "chart-bar", "indent": 0, "keep_closed": 0, "label": "Daily Manufacturing Report", "link_to": "Daily Manufacturing Report", "link_type": "Report", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "icon": "workflow", "indent": 0, "keep_closed": 0, "label": "BOM", "link_to": "BOM", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "icon": "factory", "indent": 0, "keep_closed": 0, "label": "Work Order", "link_to": "Work Order", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "icon": "boxes", "indent": 0, "keep_closed": 0, "label": "Stock Entry", "link_to": "Stock Entry", "link_type": "DocType", "route_options": "{\"stock_entry_type\":\"Manufacture\"}", "show_arrow": 0, "type": "Link"},

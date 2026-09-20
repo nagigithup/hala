@@ -162,3 +162,25 @@ Warehouse {0} does not belong to company {1}.,المستودع {0} لا يتبع
 Please select the source and finished-goods warehouses.,يرجى تحديد مستودع المواد الخام ومستودع المنتج النهائي.
 Manufacturing quantity must be greater than zero.,يجب أن تكون كمية التصنيع أكبر من صفر.
 Invalid manufacturing request identifier.,معرّف طلب التصنيع غير صالح.
+Daily Manufacturing Report,تقرير التصنيع اليومي
+From Date,من تاريخ
+To Date,إلى تاريخ
+Company,الشركة
+Finished Item Code,رمز المنتج النهائي
+Finished Item Name,اسم المنتج النهائي
+Manufactured Quantity,الكمية المصنعة
+Finished Goods Value,قيمة المنتجات النهائية
+Raw Material Item Code,رمز المادة الخام
+Raw Material Item Name,اسم المادة الخام
+Consumed Qty,الكمية المستهلكة
+Basic Rate,السعر الأساسي
+Consumed Value,قيمة الاستهلاك
+Manufacturing Entries,عدد حركات التصنيع
+Total Finished Goods Qty,إجمالي كمية المنتجات النهائية
+Different Finished Items,عدد المنتجات النهائية المختلفة
+Total Raw Material Consumption Value,إجمالي قيمة استهلاك المواد الخام
+Total Finished Goods Value,إجمالي قيمة المنتجات النهائية
+Manufacturing by Finished Item,التصنيع حسب المنتج النهائي
+Total Manufactured Qty,إجمالي الكمية المصنعة
+No manufacturing entries found for the selected filters.,لا توجد حركات تصنيع ضمن عوامل التصفية المحددة.
+From Date cannot be after To Date.,لا يمكن أن يكون تاريخ البداية بعد تاريخ النهاية.

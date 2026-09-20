@@ -17,6 +17,10 @@ REQUEST_ID_FIELD = "custom_hala_manufacturing_request_id"
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{16,80}$")
 
 
+def _posting_time(value: str | None = None):
+	return get_time(value or nowtime()).replace(microsecond=0)
+
+
 def _require_permissions(*, submit: bool = False) -> None:
 	require_portal_access()
 	for doctype in ("Item", "BOM", "Warehouse"):
@@ -80,7 +84,7 @@ def _validate_inputs(
 		bom=bom,
 		quantity=quantity,
 		posting_date=getdate(posting_date or nowdate()),
-		posting_time=get_time(posting_time or nowtime()),
+		posting_time=_posting_time(posting_time),
 	)
 
 
@@ -223,7 +227,7 @@ def get_context(item_code: str | None = None, bom_no: str | None = None):
 		"finished_uom": None,
 		"company": frappe.defaults.get_user_default("Company"),
 		"posting_date": nowdate(),
-		"posting_time": nowtime(),
+		"posting_time": _posting_time().strftime("%H:%M:%S"),
 		"can_create_bom": frappe.has_permission("BOM", "create"),
 	}
 	if not item_code:

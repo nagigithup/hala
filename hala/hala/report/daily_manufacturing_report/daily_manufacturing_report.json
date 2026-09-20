@@ -1,0 +1,26 @@
+{
+ "add_total_row": 0,
+ "apply_user_permissions": 1,
+ "creation": "2026-09-20 16:00:00.000000",
+ "disabled": 0,
+ "docstatus": 0,
+ "doctype": "Report",
+ "idx": 0,
+ "is_standard": "Yes",
+ "modified": "2026-09-20 16:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Hala",
+ "name": "Daily Manufacturing Report",
+ "owner": "Administrator",
+ "prepared_report": 0,
+ "ref_doctype": "Stock Entry",
+ "report_name": "Daily Manufacturing Report",
+ "report_type": "Script Report",
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Stock User"},
+  {"role": "Stock Manager"},
+  {"role": "Manufacturing User"},
+  {"role": "Manufacturing Manager"}
+ ]
+}

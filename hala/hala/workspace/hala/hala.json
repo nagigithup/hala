@@ -43,6 +43,7 @@
   {"dependencies":"POS Profile","hidden":0,"is_query_report":0,"label":"Point of Sale","link_count":0,"link_to":"point-of-sale","link_type":"Page","onboard":0,"type":"Link"},
   {"hidden":0,"is_query_report":0,"label":"BOM and Manufacturing","link_count":0,"onboard":0,"type":"Card Break"},
   {"dependencies":"Item, BOM, Warehouse, Stock Entry","hidden":0,"is_query_report":0,"label":"Quick Manufacturing","link_count":0,"link_to":"hala-quick-manufacturing","link_type":"Page","onboard":1,"type":"Link"},
+  {"dependencies":"Stock Entry","hidden":0,"is_query_report":1,"label":"Daily Manufacturing Report","link_count":0,"link_to":"Daily Manufacturing Report","link_type":"Report","onboard":1,"report_ref_doctype":"Stock Entry","type":"Link"},
   {"dependencies":"Item","hidden":0,"is_query_report":0,"label":"BOM","link_count":0,"link_to":"BOM","link_type":"DocType","onboard":1,"type":"Link"},
   {"dependencies":"Item, BOM","hidden":0,"is_query_report":0,"label":"Work Order","link_count":0,"link_to":"Work Order","link_type":"DocType","onboard":0,"type":"Link"},
   {"dependencies":"Item, BOM","hidden":0,"is_query_report":0,"label":"Stock Entry","link_count":0,"link_to":"Stock Entry","link_type":"DocType","onboard":0,"type":"Link"},
