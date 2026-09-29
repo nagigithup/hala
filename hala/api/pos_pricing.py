@@ -7,7 +7,6 @@ for each cart/customer and is revalidated when the invoice draft is created.
 import json
 
 import frappe
-from erpnext.accounts.party import get_default_price_list
 from frappe import _
 from frappe.utils import cint, flt, nowdate
 
@@ -31,8 +30,7 @@ def _normalise_pos_profile(pos_profile):
 def resolve_effective_price_list(customer=None, pos_profile=None):
 	"""Resolve the selling price list without mutating Customer or POS Profile.
 
-	Precedence follows ERPNext's party/POS defaults: Customer, Customer Group,
-	POS Profile, Selling Settings, then Standard Selling as the final fallback.
+	Use the customer's own list, or Standard Selling when none is assigned.
 	"""
 	pos_profile = _normalise_pos_profile(pos_profile)
 	price_list = None
@@ -41,9 +39,10 @@ def resolve_effective_price_list(customer=None, pos_profile=None):
 		if not frappe.db.exists("Customer", customer):
 			frappe.throw(_("Customer {0} does not exist").format(customer))
 		customer_doc = frappe.get_cached_doc("Customer", customer)
-		# ERPNext's helper covers Customer.default_price_list and the standard
-		# Customer Group default when the customer field is empty.
-		price_list = get_default_price_list(customer_doc)
+		price_list = customer_doc.default_price_list
+
+	if not price_list and frappe.db.exists("Price List", FINAL_FALLBACK_PRICE_LIST):
+		price_list = FINAL_FALLBACK_PRICE_LIST
 
 	if not price_list and pos_profile:
 		if not frappe.db.exists("POS Profile", pos_profile):
@@ -52,9 +51,6 @@ def resolve_effective_price_list(customer=None, pos_profile=None):
 
 	if not price_list:
 		price_list = frappe.get_single_value("Selling Settings", "selling_price_list")
-
-	if not price_list and frappe.db.exists("Price List", FINAL_FALLBACK_PRICE_LIST):
-		price_list = FINAL_FALLBACK_PRICE_LIST
 
 	if not price_list:
 		frappe.throw(_("No selling Price List is configured"))
@@ -157,6 +153,35 @@ def get_item_details(
 	except Exception as error:
 		frappe.log_error(frappe.get_traceback(), "Hala POS Item Details Error")
 		frappe.throw(_("Error fetching item details: {0}").format(str(error)))
+
+
+@frappe.whitelist()
+def get_catalog_prices(customer=None, pos_profile=None, items=None):
+	"""Return the effective list and display prices for visible POS items."""
+	if frappe.session.user == "Guest":
+		frappe.throw(_("Please log in to use the POS"), frappe.PermissionError)
+
+	items = json.loads(items) if isinstance(items, str) else items or []
+	if not isinstance(items, list) or len(items) > 100:
+		frappe.throw(_("Up to 100 items can be priced at once"), frappe.ValidationError)
+
+	price_list = resolve_effective_price_list(customer=customer, pos_profile=pos_profile)
+	prices = {}
+	for item in items:
+		if not isinstance(item, dict) or not item.get("item_code"):
+			frappe.throw(_("An item code is required"), frappe.ValidationError)
+		item_code = item["item_code"]
+		details = _get_customer_item_details(
+			item_code=item_code,
+			pos_profile=pos_profile,
+			customer=customer,
+			uom=item.get("uom"),
+		)
+		prices[item_code] = {
+			"rate": flt(details.get("price_list_rate") or details.get("rate") or 0),
+			"uom": details.get("uom") or item.get("uom"),
+		}
+	return {"price_list": price_list, "prices": prices}
 
 
 def _validate_submitted_price_list_rates(data, effective_price_list):

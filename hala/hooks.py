@@ -36,6 +36,10 @@ override_whitelisted_methods = {
 	"pos_next.api.invoices.update_invoice": "hala.api.pos_pricing.update_invoice",
 }
 
+# Add customer-aware catalog prices to the existing POS Next page without
+# copying or changing its frontend bundle.
+page_renderer = ["hala.pos_page.CustomerPricingPOSPage"]
+
 fixtures = [
 	{"dt": "Role", "filters": [["role_name", "=", "Hala Portal User"]]},
 	{"dt": "Custom Field", "filters": [["name", "=", "Stock Entry-custom_hala_manufacturing_request_id"]]},

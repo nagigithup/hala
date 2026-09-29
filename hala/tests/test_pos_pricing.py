@@ -5,6 +5,7 @@ from frappe.tests import IntegrationTestCase
 
 from hala.api.pos_pricing import (
 	_validate_submitted_price_list_rates,
+	get_catalog_prices,
 	resolve_effective_price_list,
 	update_invoice,
 )
@@ -27,13 +28,9 @@ class TestPOSCustomerPriceList(IntegrationTestCase):
 				)
 			raise AssertionError(f"Unexpected document lookup: {doctype} {name}")
 
-		def default_price_list(customer):
-			return customer.default_price_list
-
 		return (
 			patch("hala.api.pos_pricing.frappe.db.exists", return_value=True),
 			patch("hala.api.pos_pricing.frappe.get_cached_doc", side_effect=cached_doc),
-			patch("hala.api.pos_pricing.get_default_price_list", side_effect=default_price_list),
 			patch("hala.api.pos_pricing.frappe.get_cached_value", return_value=profile_list),
 			patch("hala.api.pos_pricing.frappe.get_single_value", return_value=setting_list),
 			patch(
@@ -43,7 +40,7 @@ class TestPOSCustomerPriceList(IntegrationTestCase):
 		)
 
 	def _resolve_with_patches(self, customer, patches, pos_profile="Test POS"):
-		with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5]:
+		with patches[0], patches[1], patches[2], patches[3], patches[4]:
 			return resolve_effective_price_list(customer, pos_profile)
 
 	def test_customer_default_price_list_has_priority(self):
@@ -52,15 +49,23 @@ class TestPOSCustomerPriceList(IntegrationTestCase):
 				patches = self._resolver_patches({customer: expected})
 				self.assertEqual(self._resolve_with_patches(customer, patches), expected)
 
-	def test_empty_customer_price_list_uses_normal_fallback_chain(self):
+	def test_empty_customer_price_list_uses_standard_selling(self):
 		patches = self._resolver_patches({"Customer": None}, profile_list="POS Selling")
-		self.assertEqual(self._resolve_with_patches("Customer", patches), "POS Selling")
-
-		patches = self._resolver_patches({"Customer": None}, profile_list=None, setting_list="Default Selling")
-		self.assertEqual(self._resolve_with_patches("Customer", patches), "Default Selling")
-
-		patches = self._resolver_patches({"Customer": None}, profile_list=None, setting_list=None)
 		self.assertEqual(self._resolve_with_patches("Customer", patches), "Standard Selling")
+
+	def test_catalog_returns_customer_prices(self):
+		with (
+			patch("hala.api.pos_pricing.resolve_effective_price_list", return_value="Customer List"),
+			patch(
+				"hala.api.pos_pricing._get_customer_item_details",
+				return_value={"price_list_rate": 100, "uom": "Kg"},
+			),
+		):
+			result = get_catalog_prices(
+				customer="Customer", pos_profile="Test POS", items=[{"item_code": "ITEM-1", "uom": "Kg"}]
+			)
+		self.assertEqual(result["price_list"], "Customer List")
+		self.assertEqual(result["prices"]["ITEM-1"]["rate"], 100)
 
 	def test_customer_switching_resolves_a_b_a_without_cached_result(self):
 		customer_lists = {"Customer A": "Retail", "Customer B": "Wholesale"}
