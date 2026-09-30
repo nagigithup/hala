@@ -20,6 +20,8 @@ class HalaBookingPage {
 		this.page.main.addClass("hala-booking-desk-page");
 		this.booking = null;
 		this.rows = [];
+		this.open_bookings = [];
+		this.open_booking_search = "";
 		this.busy = false;
 		this.styles = frappe.require("/assets/hala/css/booking.css");
 		this.render_shell();
@@ -60,6 +62,7 @@ class HalaBookingPage {
 							<thead><tr>
 								<th>${__("Item Code")}</th>
 								<th>${__("Item Name")}</th>
+								<th>${__("UOM")}</th>
 								<th>${__("Qty")}</th>
 								<th>${__("Rate")}</th>
 								<th>${__("Amount")}</th>
@@ -81,9 +84,16 @@ class HalaBookingPage {
 				<section class="hala-booking-card hala-open-bookings">
 					<div class="hala-booking-section-heading">
 						<div><h3>${__("Open Bookings")}</h3><p>${__("Select a booking to continue working on it.")}</p></div>
-						<button class="btn btn-sm btn-default" data-action="refresh-bookings">
-							${frappe.utils.icon("refresh-cw", "sm")} ${__("Refresh")}
-						</button>
+						<div class="hala-open-bookings-tools">
+							<div class="hala-open-bookings-search">
+								${frappe.utils.icon("search", "sm")}
+								<input type="search" class="form-control" data-open-bookings-search
+									placeholder="${__("Search by customer name or booking number")}" autocomplete="off">
+							</div>
+							<button class="btn btn-sm btn-default" data-action="refresh-bookings">
+								${frappe.utils.icon("refresh-cw", "sm")} ${__("Refresh")}
+							</button>
+						</div>
 					</div>
 					<div class="table-responsive">
 						<table class="table hala-open-bookings-table">
@@ -141,6 +151,10 @@ class HalaBookingPage {
 		this.$shell.on("click", '[data-action="print"]', () => this.print());
 		this.$shell.on("click", '[data-action="new-booking"]', () => this.new_booking());
 		this.$shell.on("click", '[data-action="refresh-bookings"]', () => this.load_open_bookings());
+		this.$shell.on("input", "[data-open-bookings-search]", (event) => {
+			this.open_booking_search = event.currentTarget.value || "";
+			this.render_open_bookings();
+		});
 		this.$shell.on("click", "[data-open-booking]", (event) => {
 			this.open_booking($(event.currentTarget).attr("data-open-booking"));
 		});
@@ -208,9 +222,25 @@ class HalaBookingPage {
 
 	async load_open_bookings() {
 		this.$open_bookings.html(`<tr><td colspan="8" class="text-muted text-center">${__("Loading...")}</td></tr>`);
-		const bookings = await this.call("get_open_bookings");
-		if (!bookings.length) {
+		this.open_bookings = await this.call("get_open_bookings");
+		this.render_open_bookings();
+	}
+
+	render_open_bookings() {
+		if (!this.open_bookings.length) {
 			this.$open_bookings.html(`<tr><td colspan="8" class="text-muted text-center">${__("No open bookings found.")}</td></tr>`);
+			return;
+		}
+		const query = this.open_booking_search.trim().toLocaleLowerCase();
+		const bookings = query
+			? this.open_bookings.filter((booking) =>
+				[booking.name, booking.customer_name, booking.customer]
+					.filter(Boolean)
+					.some((value) => String(value).toLocaleLowerCase().includes(query))
+			)
+			: this.open_bookings;
+		if (!bookings.length) {
+			this.$open_bookings.html(`<tr><td colspan="8" class="text-muted text-center">${__("No matching open bookings found.")}</td></tr>`);
 			return;
 		}
 		const escape = frappe.utils.escape_html;
@@ -252,6 +282,7 @@ class HalaBookingPage {
 		row.$row = $(`<tr>
 			<td data-control="item_code"></td>
 			<td class="hala-booking-item-name" data-value="item_name">—</td>
+			<td class="hala-booking-item-uom" data-value="uom">—</td>
 			<td data-control="qty"></td>
 			<td class="hala-booking-money" data-value="rate"></td>
 			<td class="hala-booking-money" data-value="amount"></td>
@@ -310,6 +341,7 @@ class HalaBookingPage {
 
 	render_row_values(row) {
 		row.$row.find('[data-value="item_name"]').text(row.item_name || "—");
+		row.$row.find('[data-value="uom"]').text(row.uom || "—");
 		row.$row.find('[data-value="rate"]').text(this.money(row.rate));
 		row.$row.find('[data-value="amount"]').text(this.money(row.amount));
 	}

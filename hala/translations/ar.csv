@@ -172,6 +172,8 @@ Open Bookings,الحجوزات المفتوحة
 Select a booking to continue working on it.,اختر حجزاً لمتابعة العمل عليه.
 Booking No,رقم الحجز
 No open bookings found.,لا توجد حجوزات مفتوحة.
+Search by customer name or booking number,ابحث باسم العميل أو رقم الحجز
+No matching open bookings found.,لا توجد حجوزات مفتوحة مطابقة.
 Delivery Date,تاريخ التسليم
 Add Item,إضافة صنف
 Qty,الكمية
