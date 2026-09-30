@@ -93,6 +93,9 @@ class TestHalaWorkspace(IntegrationTestCase):
 		self.assertFalse(any(item.link_type == "URL" for item in sidebar.items))
 		self.assertEqual(sidebar.items[1].link_type, "Workspace")
 		self.assertEqual(sidebar.items[1].link_to, "Hala")
+		booking = next(item for item in sidebar.items if item.label == "Booking Invoice")
+		self.assertEqual(booking.link_type, "Page")
+		self.assertEqual(booking.link_to, "hala-booking")
 
 	def test_sidebar_hides_business_links_without_erpnext_permissions(self):
 		user_email = "_test_hala_sidebar@example.com"

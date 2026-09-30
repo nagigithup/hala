@@ -29,6 +29,14 @@ doctype_js = {
 	"BOM": "public/js/bom.js",
 }
 
+doc_events = {
+	"Sales Invoice": {
+		"before_submit": "hala.api.sales_invoice.validate_cash_only_customer_payment",
+		"on_submit": "hala.api.booking.allocate_booking_advances",
+		"before_trash": "hala.api.booking.prevent_booking_deletion_with_payments",
+	},
+}
+
 # POS Next keeps using its public API names. These overrides make the server the
 # authority for customer-specific price lists without changing ERPNext core.
 override_whitelisted_methods = {
@@ -42,5 +50,23 @@ page_renderer = ["hala.pos_page.CustomerPricingPOSPage"]
 
 fixtures = [
 	{"dt": "Role", "filters": [["role_name", "=", "Hala Portal User"]]},
-	{"dt": "Custom Field", "filters": [["name", "=", "Stock Entry-custom_hala_manufacturing_request_id"]]},
+	{
+		"dt": "Custom Field",
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"Customer-custom_cash_only",
+					"Stock Entry-custom_hala_manufacturing_request_id",
+					"Sales Invoice-custom_is_booking",
+					"Sales Invoice-custom_delivery_date",
+					"Sales Invoice-custom_booking_status",
+					"Payment Entry-custom_booking_invoice",
+					"Payment Entry-custom_booking_payment_request_id",
+				],
+			]
+		],
+	},
+	{"dt": "Print Format", "filters": [["name", "=", "BOOKING"]]},
 ]

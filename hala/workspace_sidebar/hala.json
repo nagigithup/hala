@@ -24,6 +24,7 @@
   {"child": 1, "collapsible": 1, "icon": "boxes", "indent": 0, "keep_closed": 0, "label": "Stock Entry", "link_to": "Stock Entry", "link_type": "DocType", "route_options": "{\"stock_entry_type\":\"Manufacture\"}", "show_arrow": 0, "type": "Link"},
 
   {"child": 0, "collapsible": 1, "icon": "users", "indent": 1, "keep_closed": 1, "label": "Customers and Sales", "link_type": "DocType", "show_arrow": 0, "type": "Section Break"},
+  {"child": 1, "collapsible": 1, "icon": "calendar-check", "indent": 0, "keep_closed": 0, "label": "Booking Invoice", "link_to": "hala-booking", "link_type": "Page", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "icon": "user", "indent": 0, "keep_closed": 0, "label": "Customers", "link_to": "Customer", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "icon": "file-question", "indent": 0, "keep_closed": 0, "label": "Quotations", "link_to": "Quotation", "link_type": "DocType", "show_arrow": 0, "type": "Link"},
   {"child": 1, "collapsible": 1, "icon": "shopping-bag", "indent": 0, "keep_closed": 0, "label": "Sales Orders", "link_to": "Sales Order", "link_type": "DocType", "show_arrow": 0, "type": "Link"},

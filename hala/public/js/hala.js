@@ -15,8 +15,8 @@
   };
 
   const words = {
-    en: {business_portal:"Business portal",live_erp:"Live ERPNext data",search_everything:"Search documents…",logout:"Log out",loading:"Loading…",dashboard:"Dashboard",items:"Items & Products",customers:"Customers",suppliers:"Suppliers",purchasing:"Purchasing",sales:"Sales",manufacturing:"BOM & Manufacturing",stock:"Stock",payments:"Payments",journal:"Journal Entries",overview:"Overview",welcome:"Good to see you",operational_summary:"Here is your live business summary.",active_items:"Active items",sales_today:"Sales today",purchases_today:"Purchases today",received_today:"Received today",paid_today:"Paid today",low_stock:"Low stock",drafts:"Drafts requiring attention",quick_actions:"Quick actions",recent:"Recent transactions",create:"Create",new:"New",search:"Search",status:"Status",from:"From",to:"To",filter:"Filter",clear:"Clear",no_records:"No records found",previous:"Previous",next:"Next",showing:"Showing",of:"of",open:"Open",edit:"Edit",submit:"Submit",cancel:"Cancel",print:"Print",pdf:"PDF",open_desk:"Open full ERPNext form",save_draft:"Save draft",add_row:"Add row",remove:"Remove",details:"Details",linked_documents:"Linked documents",created:"Created",modified:"Modified",owner:"Owner",language:"العربية",all_companies:"All companies",all_statuses:"All statuses",draft:"Draft",submitted:"Submitted",cancelled:"Cancelled",error:"Something went wrong",saved:"Document saved",confirm_submit:"Submit this document? ERPNext validations and postings will run.",confirm_cancel:"Cancel this document? ERPNext cancellation rules will run.",notifications:"Open assignments",reports:"Reports"},
-    ar: {business_portal:"بوابة الأعمال",live_erp:"بيانات ERPNext مباشرة",search_everything:"ابحث في المستندات…",logout:"تسجيل الخروج",loading:"جارٍ التحميل…",dashboard:"لوحة التحكم",items:"الأصناف والمنتجات",customers:"العملاء",suppliers:"الموردون",purchasing:"المشتريات",sales:"المبيعات",manufacturing:"قوائم المواد والتصنيع",stock:"المخزون",payments:"سندات القبض والصرف",journal:"قيود اليومية",overview:"نظرة عامة",welcome:"مرحباً بك",operational_summary:"هذا هو ملخص أعمالك المباشر.",active_items:"الأصناف النشطة",sales_today:"مبيعات اليوم",purchases_today:"مشتريات اليوم",received_today:"المقبوض اليوم",paid_today:"المدفوع اليوم",low_stock:"مخزون منخفض",drafts:"مسودات تحتاج المتابعة",quick_actions:"إجراءات سريعة",recent:"أحدث المعاملات",create:"إنشاء",new:"جديد",search:"بحث",status:"الحالة",from:"من",to:"إلى",filter:"تصفية",clear:"مسح",no_records:"لا توجد سجلات",previous:"السابق",next:"التالي",showing:"عرض",of:"من",open:"فتح",edit:"تعديل",submit:"اعتماد",cancel:"إلغاء",print:"طباعة",pdf:"PDF",open_desk:"فتح نموذج ERPNext الكامل",save_draft:"حفظ المسودة",add_row:"إضافة صف",remove:"حذف",details:"التفاصيل",linked_documents:"المستندات المرتبطة",created:"الإنشاء",modified:"التعديل",owner:"المالك",language:"English",all_companies:"كل الشركات",all_statuses:"كل الحالات",draft:"مسودة",submitted:"معتمد",cancelled:"ملغى",error:"حدث خطأ",saved:"تم حفظ المستند",confirm_submit:"هل تريد اعتماد المستند؟ ستعمل كل تحققات وترحيلات ERPNext.",confirm_cancel:"هل تريد إلغاء المستند؟ ستعمل قواعد الإلغاء في ERPNext.",notifications:"المهام المفتوحة",reports:"التقارير"}
+    en: {business_portal:"Business portal",live_erp:"Live ERPNext data",search_everything:"Search documents…",logout:"Log out",loading:"Loading…",dashboard:"Dashboard",items:"Items & Products",customers:"Customers",suppliers:"Suppliers",purchasing:"Purchasing",sales:"Sales",manufacturing:"BOM & Manufacturing",stock:"Stock",payments:"Payments",journal:"Journal Entries",overview:"Overview",welcome:"Good to see you",operational_summary:"Here is your live business summary.",active_items:"Active items",sales_today:"Sales today",purchases_today:"Purchases today",received_today:"Received today",paid_today:"Paid today",low_stock:"Low stock",drafts:"Drafts requiring attention",quick_actions:"Quick actions",recent:"Recent transactions",create:"Create",new:"New",search:"Search",status:"Status",from:"From",to:"To",filter:"Filter",clear:"Clear",no_records:"No records found",previous:"Previous",next:"Next",showing:"Showing",of:"of",open:"Open",edit:"Edit",submit:"Submit",cancel:"Cancel",print:"Print",pdf:"PDF",open_desk:"Open full ERPNext form",save_draft:"Save draft",add_row:"Add row",remove:"Remove",details:"Details",linked_documents:"Linked documents",created:"Created",modified:"Modified",owner:"Owner",language:"العربية",all_companies:"All companies",all_statuses:"All statuses",draft:"Draft",submitted:"Submitted",cancelled:"Cancelled",error:"Something went wrong",saved:"Document saved",confirm_submit:"Submit this document? ERPNext validations and postings will run.",confirm_cancel:"Cancel this document? ERPNext cancellation rules will run.",notifications:"Open assignments",reports:"Reports",booking:"Booking Invoice"},
+    ar: {business_portal:"بوابة الأعمال",live_erp:"بيانات ERPNext مباشرة",search_everything:"ابحث في المستندات…",logout:"تسجيل الخروج",loading:"جارٍ التحميل…",dashboard:"لوحة التحكم",items:"الأصناف والمنتجات",customers:"العملاء",suppliers:"الموردون",purchasing:"المشتريات",sales:"المبيعات",manufacturing:"قوائم المواد والتصنيع",stock:"المخزون",payments:"سندات القبض والصرف",journal:"قيود اليومية",overview:"نظرة عامة",welcome:"مرحباً بك",operational_summary:"هذا هو ملخص أعمالك المباشر.",active_items:"الأصناف النشطة",sales_today:"مبيعات اليوم",purchases_today:"مشتريات اليوم",received_today:"المقبوض اليوم",paid_today:"المدفوع اليوم",low_stock:"مخزون منخفض",drafts:"مسودات تحتاج المتابعة",quick_actions:"إجراءات سريعة",recent:"أحدث المعاملات",create:"إنشاء",new:"جديد",search:"بحث",status:"الحالة",from:"من",to:"إلى",filter:"تصفية",clear:"مسح",no_records:"لا توجد سجلات",previous:"السابق",next:"التالي",showing:"عرض",of:"من",open:"فتح",edit:"تعديل",submit:"اعتماد",cancel:"إلغاء",print:"طباعة",pdf:"PDF",open_desk:"فتح نموذج ERPNext الكامل",save_draft:"حفظ المسودة",add_row:"إضافة صف",remove:"حذف",details:"التفاصيل",linked_documents:"المستندات المرتبطة",created:"الإنشاء",modified:"التعديل",owner:"المالك",language:"English",all_companies:"كل الشركات",all_statuses:"كل الحالات",draft:"مسودة",submitted:"معتمد",cancelled:"ملغى",error:"حدث خطأ",saved:"تم حفظ المستند",confirm_submit:"هل تريد اعتماد المستند؟ ستعمل كل تحققات وترحيلات ERPNext.",confirm_cancel:"هل تريد إلغاء المستند؟ ستعمل قواعد الإلغاء في ERPNext.",notifications:"المهام المفتوحة",reports:"التقارير",booking:"فاتورة حجز"}
   };
 
   const nav = [
@@ -25,7 +25,7 @@
     {key:"customers", icon:"♙", items:[{label:"Customers",dt:"Customer"},{label:"Customer Groups",dt:"Customer Group"},{label:"Customer Ledger",report:"General Ledger"},{label:"Customer Outstanding",report:"Accounts Receivable"}]},
     {key:"suppliers", icon:"♟", items:[{label:"Suppliers",dt:"Supplier"},{label:"Supplier Groups",dt:"Supplier Group"},{label:"Supplier Ledger",report:"General Ledger"},{label:"Supplier Outstanding",report:"Accounts Payable"}]},
     {key:"purchasing", icon:"↓", items:[{label:"Material Requests",dt:"Material Request"},{label:"Requests for Quotation",dt:"Request for Quotation"},{label:"Supplier Quotations",dt:"Supplier Quotation"},{label:"Purchase Orders",dt:"Purchase Order"},{label:"Purchase Receipts",dt:"Purchase Receipt"},{label:"Purchase Invoices",dt:"Purchase Invoice"}]},
-    {key:"sales", icon:"↑", items:[{label:"Sales Orders",dt:"Sales Order"},{label:"Delivery Notes",dt:"Delivery Note"},{label:"Sales Invoices",dt:"Sales Invoice"}]},
+    {key:"sales", icon:"↑", items:[{label:"فاتورة حجز",route:"/booking"},{label:"Sales Orders",dt:"Sales Order"},{label:"Delivery Notes",dt:"Delivery Note"},{label:"Sales Invoices",dt:"Sales Invoice"}]},
     {key:"manufacturing", icon:"⚙", items:[{label:"BOMs",dt:"BOM"}]},
     {key:"stock", icon:"▦", items:[{label:"Stock Entries",dt:"Stock Entry"},{label:"Stock Reconciliation",dt:"Stock Reconciliation"},{label:"Warehouses",dt:"Warehouse"},{label:"Stock Balance",report:"Stock Balance"},{label:"Stock Ledger",report:"Stock Ledger"}]},
     {key:"payments", icon:"¤", items:[{label:"Payment Entries",dt:"Payment Entry"},{label:"Payment Summary",report:"Payment Ledger"}]},
@@ -64,7 +64,7 @@
   function setLoading(show) { el("hala-loader").hidden=!show; }
   function toast(message) { const node=el("hala-toast"); node.textContent=message; node.hidden=false; setTimeout(()=>node.hidden=true,3500); }
   function fail(error, container=el("hala-content")) { console.error(error); container.innerHTML=`<div class="panel empty"><div class="empty-icon">!</div><h2>${escapeHtml(t("error"))}</h2><p>${escapeHtml(error.message||error)}</p></div>`; }
-  function money(value) { const company=state.boot?.companies?.find(x=>x.name===state.company); return new Intl.NumberFormat(state.language==="ar"?"ar-SA":"en",{style:"currency",currency:company?.default_currency||"SAR",maximumFractionDigits:2}).format(Number(value||0)); }
+  function money(value,currency=null) { const company=state.boot?.companies?.find(x=>x.name===state.company); return new Intl.NumberFormat(state.language==="ar"?"ar-SA":"en",{style:"currency",currency:currency||company?.default_currency||"SAR",maximumFractionDigits:2}).format(Number(value||0)); }
   function valueView(value,key="") { if(value===null||value===undefined||value==="") return "—"; if(["grand_total","outstanding_amount","paid_amount","received_amount","total_cost","total_debit","total_credit","difference_amount"].includes(key)) return money(value); if(typeof value==="object") return escapeHtml(JSON.stringify(value)); return escapeHtml(value); }
 
   function navigate(path, replace=false) {
@@ -86,9 +86,9 @@
   function renderNav() {
     const permissions=state.boot?.permissions||{};
     el("hala-nav").innerHTML=nav.map(group=>{
-      const items=group.items.filter(item=>item.report || permissions[item.dt]?.read).map(item=>{
+      const items=group.items.filter(item=>item.route || item.report || permissions[item.dt]?.read).map(item=>{
         if(item.report) return `<a class="nav-link" href="/app/query-report/${encodeURIComponent(item.report)}" target="_blank"><span class="nav-icon">↗</span><span>${escapeHtml(item.label)}</span></a>`;
-        const path=routeFor("list",item.dt);
+        const path=item.route ? `/hala${item.route}` : routeFor("list",item.dt);
         return `<button class="nav-link" data-route="${path}"><span class="nav-icon">·</span><span>${escapeHtml(item.label)}</span></button>`;
       }).join("");
       if(group.key==="overview") return `<button class="nav-link" data-route="/hala/dashboard"><span class="nav-icon">${group.icon}</span><span>${t("dashboard")}</span></button>`;
@@ -281,10 +281,82 @@
   }
 
   function setupLinkInputs(scope) {
-    scope.querySelectorAll("input[data-link-doctype]").forEach(input=>{
+    scope.querySelectorAll("input[data-link-doctype]:not([data-link-bound])").forEach(input=>{
+      input.dataset.linkBound="1";
       const listId=`links-${Math.random().toString(36).slice(2)}`; const list=document.createElement("datalist"); list.id=listId; document.body.appendChild(list); input.setAttribute("list",listId);
       input.addEventListener("input",debounce(async()=>{ if(input.value.length<1)return; try{const rows=await api("link_options",{doctype:input.dataset.linkDoctype,txt:input.value,page_length:15});list.innerHTML=rows.map(r=>`<option value="${escapeHtml(r.name)}"></option>`).join("");}catch(_){list.innerHTML="";} },250));
     });
+  }
+
+  function bookingRow(item={}) {
+    return `<tr data-rate="${escapeHtml(item.rate||0)}">
+      <td><input data-booking-field="item_code" data-link-doctype="Item" autocomplete="off" value="${escapeHtml(item.item_code||"")}"></td>
+      <td><input type="number" min="0.001" step="any" data-booking-field="qty" value="${escapeHtml(item.qty||1)}"></td>
+      <td data-booking-rate>${money(item.rate||0,state.bookingCurrency)}</td><td data-booking-amount>${money(item.amount||0,state.bookingCurrency)}</td>
+      <td><button type="button" class="btn btn-danger" data-booking-remove>×</button></td></tr>`;
+  }
+
+  function collectBooking(booking) {
+    return {
+      name: booking.name,
+      company: booking.company || state.company,
+      customer: document.querySelector('[data-booking="customer"]').value,
+      posting_date: document.querySelector('[data-booking="posting_date"]').value,
+      delivery_date: document.querySelector('[data-booking="delivery_date"]').value,
+      items: [...document.querySelectorAll("#booking-items tbody tr")].map(row=>({
+        item_code: row.querySelector('[data-booking-field="item_code"]').value,
+        qty: Number(row.querySelector('[data-booking-field="qty"]').value||0),
+      })).filter(row=>row.item_code),
+    };
+  }
+
+  function bindBookingRows() {
+    const table=el("booking-items");
+    setupLinkInputs(table);
+    table.querySelectorAll("[data-booking-remove]:not([data-bound])").forEach(button=>{button.dataset.bound="1";button.onclick=()=>button.closest("tr").remove();});
+    table.querySelectorAll('input[data-booking-field="item_code"]:not([data-bound])').forEach(input=>{
+      input.dataset.bound="1";
+      input.addEventListener("change",async()=>{
+        if(!input.value)return;
+        const row=input.closest("tr"), qty=row.querySelector('[data-booking-field="qty"]');
+        try {
+          const details=await api("get_booking_item",{item_code:input.value,customer:document.querySelector('[data-booking="customer"]').value,qty:qty.value,posting_date:document.querySelector('[data-booking="posting_date"]').value});
+          row.dataset.rate=details.rate; row.querySelector("[data-booking-rate]").textContent=money(details.rate,state.bookingCurrency); row.querySelector("[data-booking-amount]").textContent=money(details.rate*Number(qty.value||0),state.bookingCurrency);
+        } catch(error){toast(error.message);}
+      });
+      const qty=input.closest("tr").querySelector('[data-booking-field="qty"]');
+      qty.addEventListener("input",()=>{const row=qty.closest("tr");row.querySelector("[data-booking-amount]").textContent=money(Number(row.dataset.rate||0)*Number(qty.value||0),state.bookingCurrency);});
+    });
+  }
+
+  async function renderBooking(name=null) {
+    const content=el("hala-content"); setLoading(true);
+    try {
+      const booking=await api("get_booking",{name,company:state.company});
+      state.bookingCurrency=booking.currency;
+      const draft=Number(booking.docstatus)===0;
+      content.innerHTML=`<div class="booking-page" dir="rtl">
+        <div class="page-head"><div><span class="eyebrow">Hala Booking</span><h1>${draft?"فاتورة حجز":"فاتورة مبيعات"}</h1><p>${escapeHtml(booking.name||"حجز جديد")}</p></div>
+        <div class="actions">${draft?`<button class="btn btn-primary" id="booking-save">حفظ</button>`:""}${draft&&booking.name?`<button class="btn" id="booking-pay">دفع</button><button class="btn btn-primary" id="booking-finalize">توليد فاتورة مبيعات</button><button class="btn" id="booking-print">طباعة الحجز</button>`:""}</div></div>
+        <div id="booking-error" class="form-errors" hidden></div>
+        <section class="panel booking-main"><div class="booking-fields">
+          <label>العميل<input data-booking="customer" data-link-doctype="Customer" autocomplete="off" value="${escapeHtml(booking.customer||"")}" ${draft?"":"disabled"}></label>
+          <label>التاريخ<input type="date" data-booking="posting_date" value="${escapeHtml(booking.posting_date||"")}" ${draft?"":"disabled"}></label>
+          <label>تاريخ التسليم<input type="date" data-booking="delivery_date" value="${escapeHtml(booking.delivery_date||"")}" ${draft?"":"disabled"}></label>
+        </div>
+        <div class="panel-head"><h2>الأصناف</h2>${draft?`<button class="btn" id="booking-add-row">＋ إضافة صنف</button>`:""}</div>
+        <div class="child-table"><table id="booking-items"><thead><tr><th>الصنف</th><th>الكمية</th><th>السعر</th><th>المبلغ</th><th></th></tr></thead><tbody>${(booking.items.length?booking.items:[{}]).map(bookingRow).join("")}</tbody></table></div>
+        </section>
+        <section class="booking-totals"><div><span>المجموع الفرعي</span><strong>${money(booking.net_total,booking.currency)}</strong></div><div><span>الضريبة</span><strong>${money(booking.tax,booking.currency)}</strong></div><div class="grand"><span>الإجمالي</span><strong>${money(booking.grand_total,booking.currency)}</strong></div><div class="paid"><span>المدفوع</span><strong>${money(booking.paid_amount,booking.currency)}</strong></div><div class="remaining"><span>المتبقي</span><strong>${money(booking.remaining_amount,booking.currency)}</strong></div></section>
+        <dialog id="booking-payment-dialog"><form method="dialog"><label>المبلغ<input id="booking-payment-amount" type="number" min="0.01" step="0.01" required></label><div class="actions"><button class="btn" value="cancel">إلغاء</button><button class="btn btn-primary" value="confirm">تأكيد</button></div></form></dialog>
+      </div>`;
+      setupLinkInputs(content); bindBookingRows();
+      if(el("booking-add-row")) el("booking-add-row").onclick=()=>{el("booking-items").querySelector("tbody").insertAdjacentHTML("beforeend",bookingRow());bindBookingRows();};
+      if(el("booking-save")) el("booking-save").onclick=async()=>{try{setLoading(true);const saved=await api("save_booking",{booking:collectBooking(booking)},true);toast("تم حفظ الحجز");navigate(`/hala/booking/${encodeURIComponent(saved.name)}`,true);}catch(error){const box=el("booking-error");box.textContent=error.message;box.hidden=false;}finally{setLoading(false);}};
+      if(el("booking-print")) el("booking-print").onclick=()=>window.open(`/printview?doctype=Sales%20Invoice&name=${encodeURIComponent(booking.name)}&format=BOOKING&no_letterhead=0`,"_blank");
+      if(el("booking-pay")) el("booking-pay").onclick=()=>{const dialog=el("booking-payment-dialog");el("booking-payment-amount").value=booking.remaining_amount||"";dialog.showModal();dialog.onclose=async()=>{if(dialog.returnValue!=="confirm")return;try{setLoading(true);await api("create_booking_payment",{booking_name:booking.name,amount:el("booking-payment-amount").value,request_id:crypto.randomUUID()},true);toast("تم تسجيل الدفعة");renderBooking(booking.name);}catch(error){toast(error.message);}finally{setLoading(false);}};};
+      if(el("booking-finalize")) el("booking-finalize").onclick=async()=>{if(!confirm("سيتم اعتماد نفس الفاتورة وتخصيص الدفعات. هل تريد المتابعة؟"))return;try{setLoading(true);await api("finalize_booking",{booking_name:booking.name},true);toast("تم توليد فاتورة المبيعات");renderBooking(booking.name);}catch(error){toast(error.message);}finally{setLoading(false);}};
+    } catch(error){fail(error,content);} finally{setLoading(false);}
   }
 
   function parseRoute() {
@@ -295,6 +367,7 @@
     state.page=1; const route=parseRoute(); document.querySelectorAll(".nav-link").forEach(x=>x.classList.toggle("active",x.dataset.route===location.pathname));
     if(route.kind==="dashboard") return renderDashboard();
     if(route.kind==="module"&&["purchasing","sales"].includes(route.doctype)) return renderModuleDashboard(route.doctype);
+    if(route.kind==="booking") return renderBooking(route.doctype);
     if(route.kind==="list"&&route.doctype) return renderList(route.doctype);
     if(route.kind==="view"&&route.doctype&&route.name) return renderDetail(route.doctype,route.name);
     if(route.kind==="new"&&route.doctype) return renderForm(route.doctype);

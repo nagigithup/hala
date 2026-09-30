@@ -40,6 +40,8 @@ Draft Sales Invoices,فواتير المبيعات المسودة
 Unpaid Sales Invoices,فواتير المبيعات غير المدفوعة
 Low Stock Items,أصناف منخفضة المخزون
 Item,الصنف
+Item Code,رمز الصنف
+Item Name,اسم الصنف
 UOM,وحدة القياس
 Item Price,سعر الصنف
 Price List,قائمة الأسعار
@@ -163,6 +165,31 @@ Please select the source and finished-goods warehouses.,يرجى تحديد مس
 Manufacturing quantity must be greater than zero.,يجب أن تكون كمية التصنيع أكبر من صفر.
 Invalid manufacturing request identifier.,معرّف طلب التصنيع غير صالح.
 Daily Manufacturing Report,تقرير التصنيع اليومي
+Booking Invoice,فاتورة حجز
+Booking Status,حالة الحجز
+New Booking,حجز جديد
+Open Bookings,الحجوزات المفتوحة
+Select a booking to continue working on it.,اختر حجزاً لمتابعة العمل عليه.
+Booking No,رقم الحجز
+No open bookings found.,لا توجد حجوزات مفتوحة.
+Delivery Date,تاريخ التسليم
+Add Item,إضافة صنف
+Qty,الكمية
+Rate,السعر
+Amount,المبلغ
+Subtotal,المجموع الفرعي
+Tax,الضريبة
+Grand Total,الإجمالي
+Paid,المدفوع
+Remaining,المتبقي
+Pay,دفع
+Generate Sales Invoice,توليد فاتورة مبيعات
+Print Booking,طباعة الحجز
+Booking saved,تم حفظ الحجز
+Payment recorded,تم تسجيل الدفعة
+Confirm,تأكيد
+Submit this booking as the Sales Invoice?,هل تريد اعتماد هذا الحجز كفاتورة مبيعات؟
+Sales Invoice generated,تم توليد فاتورة المبيعات
 From Date,من تاريخ
 To Date,إلى تاريخ
 Company,الشركة

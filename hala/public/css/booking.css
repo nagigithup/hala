@@ -1,0 +1,188 @@
+.hala-booking-desk-page {
+	background: var(--subtle-fg);
+}
+
+.hala-booking-shell {
+	max-width: 1180px;
+	margin: 0 auto;
+	padding: 16px 4px 40px;
+	text-align: right;
+}
+
+.hala-booking-card,
+.hala-booking-totals {
+	background: var(--card-bg);
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius-lg);
+	box-shadow: var(--shadow-xs);
+}
+
+.hala-booking-card {
+	padding: 20px 22px;
+	margin-bottom: 16px;
+}
+
+.hala-booking-heading,
+.hala-booking-section-heading,
+.hala-booking-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.hala-booking-heading h2,
+.hala-booking-section-heading h3 {
+	margin: 3px 0 5px;
+}
+
+.hala-booking-heading p {
+	margin: 0;
+	color: var(--text-muted);
+}
+
+.hala-booking-kicker {
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+	font-weight: 600;
+	letter-spacing: .06em;
+	text-transform: uppercase;
+}
+
+.hala-booking-fields {
+	display: grid;
+	grid-template-columns: 2fr repeat(3, 1fr);
+	gap: 18px;
+}
+
+.hala-booking-fields .frappe-control,
+.hala-booking-table .frappe-control {
+	margin-bottom: 0;
+}
+
+.hala-booking-table {
+	margin: 14px 0 0;
+}
+
+.hala-booking-items-wrap {
+	min-height: 260px;
+	overflow: visible;
+}
+
+.hala-booking-table th {
+	font-size: var(--text-xs);
+	color: var(--text-muted);
+}
+
+.hala-booking-table th:first-child {
+	min-width: 320px;
+}
+
+.hala-booking-table th:nth-child(2) {
+	min-width: 190px;
+}
+
+.hala-booking-table th:nth-child(3) {
+	min-width: 100px;
+}
+
+.hala-booking-table td {
+	vertical-align: middle;
+}
+
+.hala-booking-table td:last-child,
+.hala-booking-table th:last-child {
+	width: 44px;
+	text-align: center;
+}
+
+.hala-booking-money {
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.hala-booking-item-name {
+	font-weight: 600;
+	white-space: normal;
+}
+
+.hala-booking-table .awesomplete > ul {
+	min-width: 420px;
+	max-height: 280px;
+	z-index: 1050;
+}
+
+.hala-booking-totals {
+	width: min(100%, 430px);
+	margin-inline-start: auto;
+	padding: 16px 20px;
+	margin-bottom: 16px;
+}
+
+.hala-booking-totals > div {
+	display: flex;
+	justify-content: space-between;
+	gap: 24px;
+	padding: 7px 0;
+}
+
+.hala-booking-totals .grand {
+	border-top: 2px solid var(--text-color);
+	margin-top: 5px;
+	padding-top: 12px;
+	font-size: var(--text-lg);
+}
+
+.hala-booking-totals .paid {
+	color: var(--green-700);
+}
+
+.hala-booking-totals .remaining {
+	color: var(--red-700);
+	font-weight: 600;
+}
+
+.hala-open-bookings {
+	margin-top: 16px;
+}
+
+.hala-open-bookings .hala-booking-section-heading p {
+	margin: 3px 0 0;
+	color: var(--text-muted);
+}
+
+.hala-open-bookings-table {
+	margin: 14px 0 0;
+}
+
+.hala-open-bookings-table th {
+	white-space: nowrap;
+	font-size: var(--text-xs);
+	color: var(--text-muted);
+}
+
+.hala-open-bookings-table tbody tr {
+	cursor: pointer;
+}
+
+.hala-open-bookings-table tbody tr:hover td {
+	background: var(--control-bg);
+}
+
+.hala-open-bookings-table td {
+	vertical-align: middle;
+	white-space: nowrap;
+}
+
+.hala-booking-list-remaining {
+	color: var(--red-700);
+	font-weight: 600;
+}
+
+@media (max-width: 767px) {
+	.hala-booking-fields { grid-template-columns: 1fr; }
+	.hala-booking-heading { align-items: stretch; flex-direction: column; }
+	.hala-booking-actions { flex-wrap: wrap; justify-content: flex-start; }
+	.hala-booking-card { padding: 16px; }
+	.hala-booking-items-wrap { overflow-x: auto; overflow-y: visible; }
+}
