@@ -71,6 +71,23 @@ def _paid_in_invoice_currency(doc, payments):
 	return paid
 
 
+def _calculate_booking_payment(tendered, outstanding, precision=2):
+	"""Split cash received into accounting payment, remaining due, and change."""
+	tendered = flt(tendered, precision)
+	outstanding = max(flt(outstanding, precision), 0)
+	accounting_amount = min(tendered, outstanding)
+	return {
+		"accounting_amount": flt(accounting_amount, precision),
+		"remaining_amount": flt(max(outstanding - accounting_amount, 0), precision),
+		"change_amount": flt(max(tendered - accounting_amount, 0), precision),
+	}
+
+
+def _get_default_sales_invoice_print_format():
+	"""Return the configured Sales Invoice default used by every print path."""
+	return frappe.get_meta("Sales Invoice").default_print_format or "Standard"
+
+
 def _apply_standard_sales_tax_defaults(doc):
 	"""Apply the same party tax rule/default template used by a Sales Invoice form."""
 	from erpnext.accounts.party import get_party_details
@@ -117,6 +134,13 @@ def _apply_standard_sales_tax_defaults(doc):
 	)
 
 
+def _make_booking_taxes_inclusive(doc):
+	"""Treat catalog prices as VAT-inclusive for Hala bookings."""
+	for tax in doc.get("taxes") or []:
+		# ERPNext cannot include a fixed Actual charge in an item's print rate.
+		tax.included_in_print_rate = 0 if tax.charge_type == "Actual" else 1
+
+
 @frappe.whitelist()
 def get_open_bookings():
 	require_portal_access()
@@ -130,6 +154,7 @@ def get_open_bookings():
 			"customer_name",
 			"posting_date",
 			"custom_delivery_date",
+			"custom_booking_status",
 			"grand_total",
 			"currency",
 			"company_currency",
@@ -167,6 +192,7 @@ def get_open_bookings():
 				"customer_name": booking.customer_name or booking.customer,
 				"posting_date": booking.posting_date,
 				"delivery_date": booking.custom_delivery_date,
+				"booking_status": booking.custom_booking_status or DEFAULT_BOOKING_STATUS,
 				"grand_total": flt(booking.grand_total),
 				"paid_amount": paid,
 				"remaining_amount": max(flt(booking.grand_total) - paid, 0),
@@ -194,6 +220,7 @@ def _summary(doc):
 		"grand_total": flt(doc.grand_total),
 		"paid_amount": paid,
 		"remaining_amount": max(flt(doc.grand_total) - paid, 0),
+		"print_format": _get_default_sales_invoice_print_format(),
 		"items": [
 			{
 				"item_code": row.item_code,
@@ -316,6 +343,7 @@ def save_booking(booking):
 		customer=doc.customer, pos_profile=profile.name if profile else None
 	)
 	_apply_standard_sales_tax_defaults(doc)
+	_make_booking_taxes_inclusive(doc)
 	if profile:
 		doc.set_warehouse = profile.warehouse
 	doc.set("items", [])
@@ -358,17 +386,16 @@ def create_booking_payment(booking_name, amount, request_id):
 			frappe.throw(_("This payment request ID has already been used."))
 		return {"payment_entry": existing.name, **_summary(doc)}
 
-	amount = flt(amount, doc.precision("grand_total"))
-	if amount <= 0:
+	precision = doc.precision("grand_total")
+	tendered_amount = flt(amount, precision)
+	if tendered_amount <= 0:
 		frappe.throw(_("Amount must be greater than zero."))
 	paid = _paid_in_invoice_currency(doc, _booking_payments(doc.name, for_update=True))
-	maximum = max(flt(doc.grand_total) - paid, 0)
-	if amount > maximum + AMOUNT_TOLERANCE:
-		frappe.throw(
-			_("Payment exceeds the booking total. Maximum allowed: {0}").format(
-				frappe.format_value(maximum, {"fieldtype": "Currency", "currency": doc.currency})
-			)
-		)
+	maximum = max(flt(doc.grand_total, precision) - flt(paid, precision), 0)
+	payment = _calculate_booking_payment(tendered_amount, maximum, precision)
+	accounting_amount = payment["accounting_amount"]
+	if accounting_amount <= 0:
+		frappe.throw(_("This booking is already fully paid."))
 
 	shift_data = _active_shift(required=True)
 	shift = shift_data["pos_opening_shift"]
@@ -381,9 +408,9 @@ def create_booking_payment(booking_name, amount, request_id):
 	from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
 
 	payment_account = get_bank_cash_account(mode_of_payment, doc.company)["account"]
-	party_amount = amount
+	party_amount = accounting_amount
 	if doc.get("party_account_currency") != doc.currency:
-		party_amount = amount * flt(doc.conversion_rate or 1)
+		party_amount = accounting_amount * flt(doc.conversion_rate or 1)
 	pe = get_payment_entry(
 		"Sales Invoice",
 		doc.name,
@@ -414,7 +441,13 @@ def create_booking_payment(booking_name, amount, request_id):
 	pe.flags.ignore_permissions = True
 	pe.insert()
 	pe.submit()
-	return {"payment_entry": pe.name, **_summary(doc)}
+	return {
+		"payment_entry": pe.name,
+		"tendered_amount": tendered_amount,
+		"accounting_amount": accounting_amount,
+		"change_amount": payment["change_amount"],
+		**_summary(doc),
+	}
 
 
 @frappe.whitelist(methods=["POST"])

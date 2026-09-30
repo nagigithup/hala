@@ -2,6 +2,21 @@
 	background: var(--subtle-fg);
 }
 
+body.hala-booking-embedded .body-sidebar-container,
+body.hala-booking-embedded .navbar,
+body.hala-booking-embedded .page-head {
+	display: none !important;
+}
+
+body.hala-booking-embedded .main-section {
+	height: 100vh;
+}
+
+body.hala-booking-embedded .page-container,
+body.hala-booking-embedded .layout-main-section-wrapper {
+	min-height: 100vh;
+}
+
 .hala-booking-shell {
 	max-width: 1180px;
 	margin: 0 auto;

@@ -5,8 +5,11 @@ from frappe.tests import IntegrationTestCase
 
 from hala.api.booking import (
 	_apply_standard_sales_tax_defaults,
+	_calculate_booking_payment,
 	COMPLETED_BOOKING_STATUS,
 	_default_payment_method,
+	_get_default_sales_invoice_print_format,
+	_make_booking_taxes_inclusive,
 	_summary,
 	allocate_booking_advances,
 	finalize_booking,
@@ -14,6 +17,49 @@ from hala.api.booking import (
 
 
 class TestHalaBooking(IntegrationTestCase):
+	@patch("hala.api.booking.frappe.get_meta")
+	def test_sales_invoice_print_format_uses_configured_default(self, get_meta):
+		get_meta.return_value = frappe._dict({"default_print_format": "Hala POS Invoice"})
+
+		self.assertEqual(_get_default_sales_invoice_print_format(), "Hala POS Invoice")
+
+	@patch("hala.api.booking.frappe.get_meta")
+	def test_sales_invoice_print_format_falls_back_to_standard(self, get_meta):
+		get_meta.return_value = frappe._dict({"default_print_format": None})
+
+		self.assertEqual(_get_default_sales_invoice_print_format(), "Standard")
+
+	def test_booking_payment_caps_overpayment_as_customer_change(self):
+		payment = _calculate_booking_payment(50, 46)
+
+		self.assertEqual(payment["accounting_amount"], 46)
+		self.assertEqual(payment["remaining_amount"], 0)
+		self.assertEqual(payment["change_amount"], 4)
+
+	def test_booking_payment_keeps_partial_amount_as_remaining_due(self):
+		payment = _calculate_booking_payment(30, 46)
+
+		self.assertEqual(payment["accounting_amount"], 30)
+		self.assertEqual(payment["remaining_amount"], 16)
+		self.assertEqual(payment["change_amount"], 0)
+
+	def test_booking_taxes_are_inclusive_except_actual_charges(self):
+		doc = frappe._dict(
+			{
+				"taxes": [
+					frappe._dict(
+						{"charge_type": "On Net Total", "included_in_print_rate": 0}
+					),
+					frappe._dict({"charge_type": "Actual", "included_in_print_rate": 1}),
+				]
+			}
+		)
+
+		_make_booking_taxes_inclusive(doc)
+
+		self.assertEqual(doc.taxes[0].included_in_print_rate, 1)
+		self.assertEqual(doc.taxes[1].included_in_print_rate, 0)
+
 	@patch("erpnext.controllers.accounts_controller.get_taxes_and_charges")
 	@patch("erpnext.accounts.party.get_party_details")
 	def test_customer_tax_rule_takes_priority_over_company_default(self, party_details, get_taxes):

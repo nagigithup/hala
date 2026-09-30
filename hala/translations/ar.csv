@@ -183,6 +183,11 @@ Grand Total,الإجمالي
 Paid,المدفوع
 Remaining,المتبقي
 Pay,دفع
+Invoice Amount,مبلغ الفاتورة
+Paid Amount,المبلغ المدفوع
+Remaining / Change,المبلغ الباقي / المرتجع
+Remaining Due,المبلغ المتبقي
+Change to Customer,المبلغ المرتجع للعميل
 Generate Sales Invoice,توليد فاتورة مبيعات
 Print Booking,طباعة الحجز
 Booking saved,تم حفظ الحجز

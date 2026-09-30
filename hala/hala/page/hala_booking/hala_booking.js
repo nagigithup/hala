@@ -9,6 +9,9 @@ frappe.pages["hala-booking"].on_page_show = function (wrapper) {
 class HalaBookingPage {
 	constructor(wrapper) {
 		this.wrapper = wrapper;
+		this.embedded =
+			window.self !== window.top &&
+			new URLSearchParams(window.location.search).get("embedded") === "1";
 		this.page = frappe.ui.make_app_page({
 			parent: wrapper,
 			title: __("Booking Invoice"),
@@ -89,6 +92,7 @@ class HalaBookingPage {
 								<th>${__("Customer")}</th>
 								<th>${__("Date")}</th>
 								<th>${__("Delivery Date")}</th>
+								<th>${__("Booking Status")}</th>
 								<th>${__("Grand Total")}</th>
 								<th>${__("Paid")}</th>
 								<th>${__("Remaining")}</th>
@@ -143,6 +147,7 @@ class HalaBookingPage {
 	}
 
 	async show() {
+		document.body.classList.toggle("hala-booking-embedded", this.embedded);
 		await this.styles;
 		const name = frappe.get_route()[1] || null;
 		if (!this.booking || (name && this.booking.name !== name) || (!name && this.booking.name)) {
@@ -202,10 +207,10 @@ class HalaBookingPage {
 	}
 
 	async load_open_bookings() {
-		this.$open_bookings.html(`<tr><td colspan="7" class="text-muted text-center">${__("Loading...")}</td></tr>`);
+		this.$open_bookings.html(`<tr><td colspan="8" class="text-muted text-center">${__("Loading...")}</td></tr>`);
 		const bookings = await this.call("get_open_bookings");
 		if (!bookings.length) {
-			this.$open_bookings.html(`<tr><td colspan="7" class="text-muted text-center">${__("No open bookings found.")}</td></tr>`);
+			this.$open_bookings.html(`<tr><td colspan="8" class="text-muted text-center">${__("No open bookings found.")}</td></tr>`);
 			return;
 		}
 		const escape = frappe.utils.escape_html;
@@ -214,6 +219,7 @@ class HalaBookingPage {
 			<td>${escape(booking.customer_name || booking.customer)}</td>
 			<td>${escape(frappe.datetime.str_to_user(booking.posting_date))}</td>
 			<td>${escape(booking.delivery_date ? frappe.datetime.str_to_user(booking.delivery_date) : "—")}</td>
+			<td>${escape(booking.booking_status || "تحت التجهيز")}</td>
 			<td>${format_currency(booking.grand_total, booking.currency)}</td>
 			<td class="text-success">${format_currency(booking.paid_amount, booking.currency)}</td>
 			<td class="hala-booking-list-remaining">${format_currency(booking.remaining_amount, booking.currency)}</td>
@@ -358,28 +364,50 @@ class HalaBookingPage {
 
 	pay() {
 		if (this.busy || !this.booking?.name) return;
-		frappe.prompt(
-			[{fieldname: "amount", fieldtype: "Currency", label: __("Amount"), reqd: 1,
-				options: this.booking.currency, default: this.booking.remaining_amount}],
-			async ({amount}) => {
+		const outstanding = flt(this.booking.remaining_amount);
+		const dialog = new frappe.ui.Dialog({
+			title: __("Pay"),
+			fields: [
+				{fieldname: "invoice_amount", fieldtype: "Currency", label: __("Invoice Amount"),
+					options: this.booking.currency, read_only: 1, default: this.booking.grand_total},
+				{fieldname: "paid_amount", fieldtype: "Currency", label: __("Paid Amount"),
+					options: this.booking.currency, reqd: 1, default: outstanding},
+				{fieldname: "remaining_or_change", fieldtype: "Currency", label: __("Remaining / Change"),
+					options: this.booking.currency, read_only: 1, default: 0},
+			],
+			primary_action_label: __("Confirm"),
+			primary_action: async ({paid_amount}) => {
 				if (this.busy) return;
 				this.busy = true;
+				dialog.disable_primary_action();
 				try {
 					const booking = await this.call("create_booking_payment", {
 						booking_name: this.booking.name,
-						amount,
+						amount: paid_amount,
 						request_id: this.request_id(),
 					});
+					dialog.hide();
 					frappe.show_alert({message: __("Payment recorded"), indicator: "green"});
 					await this.render_booking(booking);
 					await this.load_open_bookings();
 				} finally {
 					this.busy = false;
+					dialog.enable_primary_action();
 				}
 			},
-			__("Pay"),
-			__("Confirm")
-		);
+		});
+		const paid_field = dialog.get_field("paid_amount");
+		const balance_field = dialog.get_field("remaining_or_change");
+		const update_balance = () => {
+			const paid = Math.max(flt(paid_field.get_value()), 0);
+			const is_change = paid > outstanding;
+			balance_field.set_value(Math.abs(outstanding - paid));
+			balance_field.set_description(is_change ? __("Change to Customer") : __("Remaining Due"));
+		};
+		paid_field.$input.on("input change", update_balance);
+		dialog.show();
+		update_balance();
+		paid_field.$input.trigger("focus").select();
 	}
 
 	request_id() {
@@ -397,10 +425,37 @@ class HalaBookingPage {
 				frappe.show_alert({message: __("Sales Invoice generated"), indicator: "green"});
 				await this.render_booking(booking);
 				await this.load_open_bookings();
+				this.print_sales_invoice(booking);
 			} finally {
 				this.busy = false;
 			}
 		});
+	}
+
+	print_sales_invoice(booking) {
+		try {
+			const request = {
+				type: "hala-booking-print-sales-invoice",
+				requestId: this.request_id(),
+				invoiceName: booking.name,
+				printFormat: booking.print_format || "Standard",
+			};
+			if (this.embedded && window.parent !== window) {
+				window.parent.postMessage(request, window.location.origin);
+				return;
+			}
+
+			const params = new URLSearchParams({
+				doctype: "Sales Invoice",
+				name: request.invoiceName,
+				format: request.printFormat,
+				no_letterhead: "1",
+				trigger_print: "1",
+			});
+			window.open(`/printview?${params}`, "_blank", "width=800,height=600");
+		} catch (error) {
+			console.warn("Sales Invoice printing was unavailable:", error);
+		}
 	}
 
 	print() {
