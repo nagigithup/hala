@@ -278,6 +278,7 @@ class HalaBookingPage {
 			rate: flt(item.rate),
 			amount: flt(item.amount),
 			refresh_token: 0,
+			initializing: true,
 		};
 		row.$row = $(`<tr>
 			<td data-control="item_code"></td>
@@ -291,7 +292,8 @@ class HalaBookingPage {
 		row.item_code = frappe.ui.form.make_control({
 			parent: row.$row.find('[data-control="item_code"]'),
 			df: {fieldtype: "Link", options: "Item", fieldname: "item_code", read_only: draft ? 0 : 1,
-				get_query: () => ({filters: {disabled: 0}})},
+				get_query: () => ({filters: {disabled: 0}}),
+				change: () => !row.initializing && this.refresh_item(row)},
 			render_input: true,
 		});
 		row.qty = frappe.ui.form.make_control({
@@ -299,9 +301,12 @@ class HalaBookingPage {
 			df: {fieldtype: "Float", fieldname: "qty", reqd: 1, read_only: draft ? 0 : 1},
 			render_input: true,
 		});
-		row.item_code.set_value(item.item_code || "");
-		row.qty.set_value(item.qty || 1);
-		row.item_code.$input.on("change awesomplete-selectcomplete", () => this.refresh_item(row));
+		Promise.all([
+			row.item_code.set_value(item.item_code || ""),
+			row.qty.set_value(item.qty || 1),
+		]).finally(() => {
+			row.initializing = false;
+		});
 		row.qty.$input.on("change", () => this.refresh_item(row));
 		row.$row.find("[data-remove]").toggle(draft).on("click", () => {
 			row.$row.remove();
