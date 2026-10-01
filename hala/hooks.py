@@ -35,6 +35,10 @@ doc_events = {
 		"on_submit": "hala.api.booking.allocate_booking_advances",
 		"before_trash": "hala.api.booking.prevent_booking_deletion_with_payments",
 	},
+	"Payment Entry": {
+		"on_submit": "hala.api.deposit.sync_deposit_balance",
+		"on_cancel": "hala.api.deposit.sync_deposit_balance",
+	},
 }
 
 # POS Next keeps using its public API names. These overrides make the server the
@@ -64,6 +68,16 @@ fixtures = [
 					"Sales Invoice-custom_booking_status",
 					"Payment Entry-custom_booking_invoice",
 					"Payment Entry-custom_booking_payment_request_id",
+					"Payment Entry-custom_is_deposit",
+					"Payment Entry-custom_deposit_item",
+					"Payment Entry-custom_deposit_description",
+					"Payment Entry-custom_deposit_qty",
+					"Payment Entry-custom_deposit_original_amount",
+					"Payment Entry-custom_deposit_refunded_amount",
+					"Payment Entry-custom_deposit_balance",
+					"Payment Entry-custom_deposit_status",
+					"Payment Entry-custom_original_deposit_payment",
+					"Payment Entry-custom_deposit_request_id",
 				],
 			]
 		],

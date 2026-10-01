@@ -35,6 +35,21 @@ def _active_shift(required=True):
 	return data
 
 
+def _link_booking_to_pos_session(doc, shift_data):
+	"""Expose a booking to POS Next without creating a POS payment."""
+	shift = shift_data["pos_opening_shift"]
+	profile = shift_data["pos_profile"]
+	if profile.company != doc.company:
+		frappe.throw(_("The active POS Profile company does not match the booking company."))
+
+	doc.is_pos = 1
+	doc.pos_profile = profile.name
+	doc.posa_pos_opening_shift = shift.name
+	# Booking payments are standalone Payment Entries. POS Profile payment rows
+	# must never make saving a booking look like the cashier collected payment.
+	doc.set("payments", [])
+
+
 def _default_payment_method(profile):
 	defaults = sorted(
 		(row for row in profile.get("payments") or [] if cint(row.get("default"))),
@@ -323,9 +338,9 @@ def save_booking(booking):
 	if not items:
 		frappe.throw(_("At least one item is required."))
 
-	shift = _active_shift(required=False)
-	profile = shift["pos_profile"] if shift else None
-	company = profile.company if profile else data.get("company")
+	shift = _active_shift(required=True)
+	profile = shift["pos_profile"]
+	company = profile.company
 	if not company:
 		frappe.throw(_("Company is required."))
 
@@ -338,14 +353,13 @@ def save_booking(booking):
 	if booking_status not in BOOKING_STATUS_OPTIONS:
 		frappe.throw(_("Invalid booking status."))
 	doc.custom_booking_status = booking_status
-	doc.is_pos = 0
 	doc.selling_price_list = resolve_effective_price_list(
-		customer=doc.customer, pos_profile=profile.name if profile else None
+		customer=doc.customer, pos_profile=profile.name
 	)
 	_apply_standard_sales_tax_defaults(doc)
 	_make_booking_taxes_inclusive(doc)
-	if profile:
-		doc.set_warehouse = profile.warehouse
+	doc.set_warehouse = profile.warehouse
+	_link_booking_to_pos_session(doc, shift)
 	doc.set("items", [])
 	for item in items:
 		qty = flt(item.get("qty"))
@@ -463,11 +477,15 @@ def finalize_booking(booking_name):
 		frappe.throw(_("At least one item is required."))
 	if any(flt(row.qty) <= 0 for row in doc.get("items")):
 		frappe.throw(_("Every item quantity must be greater than zero."))
+	_link_booking_to_pos_session(doc, _active_shift(required=True))
 	doc.calculate_taxes_and_totals()
 	paid = _paid_in_invoice_currency(doc, _booking_payments(doc.name, for_update=True))
 	if paid > flt(doc.grand_total) + AMOUNT_TOLERANCE:
 		frappe.throw(_("Booking payments exceed the Sales Invoice grand total."))
 	doc.custom_booking_status = COMPLETED_BOOKING_STATUS
+	# POS Next's existing credit-sale validation flag allows a POS invoice with
+	# no payment rows. It does not create a payment or customer credit balance.
+	doc.flags.pos_next_credit_sale = 1
 	doc.submit()
 	doc.reload()
 	return _summary(doc)

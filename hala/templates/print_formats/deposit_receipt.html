@@ -1,0 +1,48 @@
+<style>
+	@page { size: 80mm auto; margin: 0; }
+	html, body, .print-format { width: 80mm !important; max-width: 80mm !important; margin: 0 !important; padding: 0 !important; }
+	.deposit-receipt { width: 74mm; margin: 0 auto; padding: 3mm 1mm; box-sizing: border-box; direction: rtl; text-align: right; color: #000; font-family: "DejaVu Sans", Arial, sans-serif; font-size: 12px; line-height: 1.55; }
+	.deposit-receipt .center { text-align: center; }
+	.deposit-receipt .logo { max-width: 42mm; max-height: 20mm; margin: 0 auto 4px; display: block; }
+	.deposit-receipt .title { font-size: 17px; font-weight: 700; margin: 5px 0; }
+	.deposit-receipt .line { border-top: 1px dashed #000; margin: 7px 0; }
+	.deposit-receipt .row { display: table; width: 100%; margin: 4px 0; }
+	.deposit-receipt .label, .deposit-receipt .value { display: table-cell; vertical-align: top; }
+	.deposit-receipt .label { width: 43%; font-weight: 700; }
+	.deposit-receipt .value { width: 57%; overflow-wrap: anywhere; }
+	.deposit-receipt .number { direction: ltr; unicode-bidi: isolate; text-align: left; font-family: "DejaVu Sans", Arial, sans-serif; }
+	.deposit-receipt .amount { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 6px 0; font-size: 15px; font-weight: 700; }
+	.deposit-receipt .notice { margin-top: 10px; padding: 7px; border: 1px solid #000; text-align: center; font-weight: 700; }
+	@media print { .deposit-receipt { width: 74mm; } }
+</style>
+
+{%- set is_refund = doc.custom_original_deposit_payment -%}
+{%- set original = frappe.get_doc("Payment Entry", doc.custom_original_deposit_payment) if is_refund else doc -%}
+{%- set currency_code = doc.paid_from_account_currency if is_refund else doc.paid_to_account_currency -%}
+{%- set currency = frappe.db.get_value("Currency", currency_code, "symbol") or currency_code -%}
+{%- set logo = frappe.db.get_value("Company", doc.company, "company_logo") -%}
+{%- set cashier = frappe.db.get_value("User", doc.owner, "full_name") or doc.owner -%}
+{%- set item_name = frappe.db.get_value("Item", doc.custom_deposit_item, "item_name") if doc.custom_deposit_item else none -%}
+{%- set receipt_amount = doc.paid_amount if is_refund else (doc.custom_deposit_original_amount or doc.received_amount) -%}
+
+<div class="deposit-receipt">
+	{% if logo %}<img class="logo" src="{{ logo }}" alt="">{% endif %}
+	<div class="center" style="font-size:15px;font-weight:700">{{ doc.company }}</div>
+	<div class="center title">{{ "سند استرداد تأمين" if is_refund else "سند استلام تأمين" }}</div>
+	<div class="line"></div>
+	<div class="row"><span class="label">رقم السند</span><span class="value number">{{ doc.name }}</span></div>
+	{% if is_refund %}<div class="row"><span class="label">سند التأمين الأصلي</span><span class="value number">{{ doc.custom_original_deposit_payment }}</span></div>{% endif %}
+	<div class="row"><span class="label">العميل</span><span class="value">{{ doc.party_name or doc.party }}</span></div>
+	<div class="row"><span class="label">التاريخ</span><span class="value number">{{ frappe.utils.formatdate(doc.posting_date, "dd-MM-yyyy") }}</span></div>
+	{% if item_name or doc.custom_deposit_item %}<div class="row"><span class="label">الصنف</span><span class="value">{{ item_name or doc.custom_deposit_item }}</span></div>{% endif %}
+	{% if doc.custom_deposit_description %}<div class="row"><span class="label">البيان</span><span class="value">{{ doc.custom_deposit_description }}</span></div>{% endif %}
+	{% if doc.custom_deposit_qty %}<div class="row"><span class="label">الكمية</span><span class="value number">{{ "%.2f"|format(doc.custom_deposit_qty) }}</span></div>{% endif %}
+	<div class="row"><span class="label">الكاشير</span><span class="value">{{ cashier }}</span></div>
+	<div class="line"></div>
+	<div class="row amount"><span class="label">{{ "مبلغ الاسترداد" if is_refund else "مبلغ التأمين" }}</span><span class="value number">{{ "%.2f"|format(receipt_amount) }} {{ currency }}</span></div>
+	{% if is_refund %}
+	<div class="row"><span class="label">المتبقي من التأمين</span><span class="value number">{{ "%.2f"|format(original.custom_deposit_balance or 0) }} {{ currency }}</span></div>
+	{% else %}
+	<div class="notice">المبلغ قابل للاسترداد عند إرجاع الصنف</div>
+	{% endif %}
+</div>

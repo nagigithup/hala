@@ -1,0 +1,22 @@
+{
+ "content": null,
+ "doctype": "Page",
+ "idx": 0,
+ "module": "Hala",
+ "name": "hala-deposit",
+ "page_name": "hala-deposit",
+ "roles": [
+  {"role": "System Manager"},
+  {"role": "Accounts User"},
+  {"role": "Accounts Manager"},
+  {"role": "Sales User"},
+  {"role": "Sales Manager"},
+  {"role": "POSNext Cashier"},
+  {"role": "Cashier"}
+ ],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Receive Deposit"
+}

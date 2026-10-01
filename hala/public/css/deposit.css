@@ -1,0 +1,113 @@
+.hala-deposit-desk-page {
+	background: var(--subtle-fg);
+}
+
+.hala-deposit-shell {
+	max-width: 1180px;
+	margin: 0 auto;
+	padding: 16px 4px 40px;
+	text-align: right;
+}
+
+.hala-deposit-card {
+	margin-bottom: 16px;
+	padding: 20px 22px;
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius-lg);
+	background: var(--card-bg);
+	box-shadow: var(--shadow-xs);
+}
+
+.hala-deposit-heading,
+.hala-deposit-section-heading,
+.hala-deposit-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.hala-deposit-heading h2,
+.hala-deposit-section-heading h3 {
+	margin: 3px 0 5px;
+}
+
+.hala-deposit-heading p,
+.hala-deposit-section-heading p {
+	margin: 0;
+	color: var(--text-muted);
+}
+
+.hala-deposit-kicker {
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.hala-deposit-fields {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px 18px;
+}
+
+.hala-deposit-fields [data-field="description"] {
+	grid-column: 1 / -1;
+}
+
+.hala-deposit-summary {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 10px;
+	margin-top: 18px;
+}
+
+.hala-deposit-summary > div {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 12px;
+	border-radius: var(--border-radius-md);
+	background: var(--subtle-fg);
+}
+
+.hala-deposit-summary span {
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+
+.hala-deposit-summary .balance strong,
+.hala-deposit-balance {
+	color: var(--green-600);
+	font-weight: 700;
+}
+
+.hala-deposit-table tbody tr {
+	cursor: pointer;
+}
+
+.hala-deposit-table tbody tr:hover {
+	background: var(--subtle-fg);
+}
+
+@media (max-width: 767px) {
+	.hala-deposit-heading,
+	.hala-deposit-section-heading {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.hala-deposit-actions {
+		flex-wrap: wrap;
+	}
+
+	.hala-deposit-fields,
+	.hala-deposit-summary {
+		grid-template-columns: 1fr;
+	}
+
+	.hala-deposit-fields [data-field="description"] {
+		grid-column: auto;
+	}
+}

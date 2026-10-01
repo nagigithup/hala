@@ -174,6 +174,39 @@ Booking No,رقم الحجز
 No open bookings found.,لا توجد حجوزات مفتوحة.
 Search by customer name or booking number,ابحث باسم العميل أو رقم الحجز
 No matching open bookings found.,لا توجد حجوزات مفتوحة مطابقة.
+Receive Deposit,استلام تأمين
+Insurance / Deposit,تأمين
+Deposit Item,الصنف / التأمين على
+Deposit Description,وصف التأمين
+Original Deposit Amount,مبلغ التأمين الأصلي
+Refunded Deposit Amount,المبلغ المسترد
+Deposit Balance,رصيد التأمين
+Deposit Status,حالة التأمين
+Original Deposit Payment,سند التأمين الأصلي
+New Deposit,تأمين جديد
+Open Deposits,التأمينات المفتوحة
+Select a deposit receipt to view or refund it.,اختر سند تأمين لعرضه أو استرداده.
+Receipt No,رقم السند
+Item / Description,الصنف / البيان
+Original Amount,المبلغ الأصلي
+Refunded,المسترد
+Balance,المتبقي
+Status,الحالة
+No open deposits found.,لا توجد تأمينات مفتوحة.
+Deposit Amount,مبلغ التأمين
+Save and Receive,حفظ واستلام
+Print Deposit Receipt,طباعة سند التأمين
+Print Deposit Refund Receipt,طباعة سند استرداد التأمين
+Refund Deposit,استرداد التأمين
+Available Balance,المبلغ المتاح
+Available for Refund,المبلغ المتاح للاسترداد
+Refund Amount,المبلغ المراد استرداده
+Confirm Refund,تأكيد الاسترداد
+Deposit received,تم استلام التأمين
+Deposit refund recorded,تم تسجيل استرداد التأمين
+Open,مفتوح
+Partially Refunded,مسترد جزئياً
+Fully Refunded,مسترد بالكامل
 Delivery Date,تاريخ التسليم
 Add Item,إضافة صنف
 Qty,الكمية

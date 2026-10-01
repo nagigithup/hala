@@ -9,6 +9,7 @@ from hala.api.booking import (
 	COMPLETED_BOOKING_STATUS,
 	_default_payment_method,
 	_get_default_sales_invoice_print_format,
+	_link_booking_to_pos_session,
 	_make_booking_taxes_inclusive,
 	_summary,
 	allocate_booking_advances,
@@ -17,6 +18,21 @@ from hala.api.booking import (
 
 
 class TestHalaBooking(IntegrationTestCase):
+	def test_booking_is_linked_to_pos_session_without_invoice_payment_rows(self):
+		doc = MagicMock()
+		doc.company = "Company"
+		shift_data = {
+			"pos_opening_shift": frappe._dict({"name": "POS-OPEN-1"}),
+			"pos_profile": frappe._dict({"name": "Main POS", "company": "Company"}),
+		}
+
+		_link_booking_to_pos_session(doc, shift_data)
+
+		self.assertEqual(doc.is_pos, 1)
+		self.assertEqual(doc.pos_profile, "Main POS")
+		self.assertEqual(doc.posa_pos_opening_shift, "POS-OPEN-1")
+		doc.set.assert_called_once_with("payments", [])
+
 	@patch("hala.api.booking.frappe.get_meta")
 	def test_sales_invoice_print_format_uses_configured_default(self, get_meta):
 		get_meta.return_value = frappe._dict({"default_print_format": "Hala POS Invoice"})
@@ -129,12 +145,13 @@ class TestHalaBooking(IntegrationTestCase):
 			_default_payment_method(profile)
 
 	@patch("hala.api.booking.require_portal_access")
+	@patch("hala.api.booking._active_shift")
 	@patch("hala.api.booking._summary", return_value={})
 	@patch("hala.api.booking._booking_payments", return_value=[])
 	@patch("hala.api.booking._get_booking")
 	@patch("hala.api.booking.frappe.db.sql")
 	def test_finalize_marks_booking_completed_before_submit(
-		self, _lock_booking, get_booking, _payments, _summary_result, _access
+		self, _lock_booking, get_booking, _payments, _summary_result, active_shift, _access
 	):
 		doc = MagicMock()
 		doc.name = "SINV-BOOKING"
@@ -142,14 +159,21 @@ class TestHalaBooking(IntegrationTestCase):
 		doc.custom_is_booking = 1
 		doc.customer = "Customer"
 		doc.grand_total = 100
+		doc.company = "Company"
 		doc.get.side_effect = lambda key: {
 			"items": [frappe._dict({"qty": 1})],
 		}.get(key)
 		get_booking.return_value = doc
+		active_shift.return_value = {
+			"pos_opening_shift": frappe._dict({"name": "POS-OPEN-1"}),
+			"pos_profile": frappe._dict({"name": "Main POS", "company": "Company"}),
+		}
 
 		finalize_booking(doc.name)
 
 		self.assertEqual(doc.custom_booking_status, COMPLETED_BOOKING_STATUS)
+		self.assertEqual(doc.flags.pos_next_credit_sale, 1)
+		doc.set.assert_called_once_with("payments", [])
 		doc.submit.assert_called_once_with()
 
 	@patch("hala.api.booking._booking_payments")
