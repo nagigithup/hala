@@ -21,6 +21,7 @@ class HalaDepositPage {
 		this.last_refund = null;
 		this.busy = false;
 		this.styles = frappe.require("/assets/hala/css/deposit.css");
+		this.printer = frappe.require("/assets/hala/js/smart_print.js");
 		this.render_shell();
 		this.make_controls();
 		this.bind_events();
@@ -291,16 +292,18 @@ class HalaDepositPage {
 		dialog.get_field("amount").$input.trigger("focus").select();
 	}
 
-	print(payment_entry) {
+	async print(payment_entry) {
 		if (!payment_entry) return;
-		const params = new URLSearchParams({
-			doctype: "Payment Entry",
-			name: payment_entry,
-			format: "Hala Deposit Receipt",
-			no_letterhead: "1",
-			trigger_print: "1",
-		});
-		window.open(`/printview?${params}`, "_blank", "width=480,height=720");
+		try {
+			await this.printer;
+			return await window.halaSmartPrint(
+				"Payment Entry",
+				payment_entry,
+				"Hala Deposit Receipt"
+			);
+		} catch (error) {
+			console.warn("Deposit printing was unavailable:", error);
+		}
 	}
 
 	money(value) {

@@ -24,6 +24,7 @@ class HalaBookingPage {
 		this.open_booking_search = "";
 		this.busy = false;
 		this.styles = frappe.require("/assets/hala/css/booking.css");
+		this.printer = frappe.require("/assets/hala/js/smart_print.js");
 		this.render_shell();
 		this.make_header_controls();
 		this.bind_events();
@@ -469,7 +470,7 @@ class HalaBookingPage {
 		});
 	}
 
-	print_sales_invoice(booking) {
+	async print_sales_invoice(booking) {
 		try {
 			const request = {
 				type: "hala-booking-print-sales-invoice",
@@ -482,22 +483,24 @@ class HalaBookingPage {
 				return;
 			}
 
-			const params = new URLSearchParams({
-				doctype: "Sales Invoice",
-				name: request.invoiceName,
-				format: request.printFormat,
-				no_letterhead: "1",
-				trigger_print: "1",
-			});
-			window.open(`/printview?${params}`, "_blank", "width=800,height=600");
+			await this.printer;
+			return await window.halaSmartPrint(
+				"Sales Invoice",
+				request.invoiceName,
+				request.printFormat
+			);
 		} catch (error) {
 			console.warn("Sales Invoice printing was unavailable:", error);
 		}
 	}
 
-	print() {
+	async print() {
 		if (!this.booking?.name) return;
-		const name = encodeURIComponent(this.booking.name);
-		window.open(`/printview?doctype=Sales%20Invoice&name=${name}&format=BOOKING&no_letterhead=0`, "_blank");
+		try {
+			await this.printer;
+			return await window.halaSmartPrint("Sales Invoice", this.booking.name, "BOOKING");
+		} catch (error) {
+			console.warn("Booking printing was unavailable:", error);
+		}
 	}
 }

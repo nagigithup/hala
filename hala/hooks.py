@@ -84,6 +84,16 @@ fixtures = [
 	},
 	{
 		"dt": "Print Format",
-		"filters": [["name", "in", ["BOOKING", "Hala POS Invoice"]]],
+		"filters": [
+			[
+				"name",
+				"in",
+				[
+					"BOOKING",
+					"Hala Deposit Receipt",
+					"payment recive",
+				],
+			]
+		],
 	},
 ]
