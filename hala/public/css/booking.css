@@ -143,6 +143,26 @@ body.hala-booking-embedded .layout-main-section-wrapper {
 	margin-bottom: 16px;
 }
 
+.hala-booking-summary {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
+	gap: 16px;
+}
+
+.hala-booking-summary .hala-booking-totals {
+	width: 100%;
+	margin-inline-start: 0;
+}
+
+.hala-booking-notes-card {
+	padding: 16px 20px;
+}
+
+.hala-booking-notes-card textarea {
+	min-height: 132px;
+	resize: vertical;
+}
+
 .hala-booking-totals > div {
 	display: flex;
 	justify-content: space-between;
@@ -228,6 +248,7 @@ body.hala-booking-embedded .layout-main-section-wrapper {
 
 @media (max-width: 767px) {
 	.hala-booking-fields { grid-template-columns: 1fr; }
+	.hala-booking-summary { grid-template-columns: 1fr; }
 	.hala-booking-heading { align-items: stretch; flex-direction: column; }
 	.hala-booking-actions { flex-wrap: wrap; justify-content: flex-start; }
 	.hala-booking-card { padding: 16px; }

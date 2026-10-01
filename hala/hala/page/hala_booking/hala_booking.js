@@ -74,13 +74,18 @@ class HalaBookingPage {
 					</div>
 				</section>
 
-				<section class="hala-booking-totals">
-					<div><span>${__("Subtotal")}</span><strong data-total="net_total">0</strong></div>
-					<div><span>${__("Tax")}</span><strong data-total="tax">0</strong></div>
-					<div class="grand"><span>${__("Grand Total")}</span><strong data-total="grand_total">0</strong></div>
-					<div class="paid"><span>${__("Paid")}</span><strong data-total="paid_amount">0</strong></div>
-					<div class="remaining"><span>${__("Remaining")}</span><strong data-total="remaining_amount">0</strong></div>
-				</section>
+				<div class="hala-booking-summary">
+					<section class="hala-booking-card hala-booking-notes-card">
+						<div data-field="notes"></div>
+					</section>
+					<section class="hala-booking-totals">
+						<div><span>${__("Subtotal")}</span><strong data-total="net_total">0</strong></div>
+						<div><span>${__("Tax")}</span><strong data-total="tax">0</strong></div>
+						<div class="grand"><span>${__("Grand Total")}</span><strong data-total="grand_total">0</strong></div>
+						<div class="paid"><span>${__("Paid")}</span><strong data-total="paid_amount">0</strong></div>
+						<div class="remaining"><span>${__("Remaining")}</span><strong data-total="remaining_amount">0</strong></div>
+					</section>
+				</div>
 
 				<section class="hala-booking-card hala-open-bookings">
 					<div class="hala-booking-section-heading">
@@ -132,6 +137,7 @@ class HalaBookingPage {
 				options: ["تحت التجهيز", "تم الانتهاء", "ملغى", "مؤجل"].join("\n"),
 				reqd: 1,
 			},
+			notes: {fieldtype: "Small Text", label: __("Notes")},
 		};
 		for (const [fieldname, df] of Object.entries(definitions)) {
 			this.controls[fieldname] = frappe.ui.form.make_control({
@@ -195,6 +201,7 @@ class HalaBookingPage {
 		await this.controls.posting_date.set_value(booking.posting_date || frappe.datetime.get_today());
 		await this.controls.delivery_date.set_value(booking.delivery_date || frappe.datetime.get_today());
 		await this.controls.booking_status.set_value(booking.booking_status || "تحت التجهيز");
+		await this.controls.notes.set_value(booking.notes || "");
 		for (const control of Object.values(this.controls)) {
 			control.df.read_only = draft ? 0 : 1;
 			control.refresh();
@@ -380,6 +387,7 @@ class HalaBookingPage {
 			posting_date: this.controls.posting_date.get_value(),
 			delivery_date: this.controls.delivery_date.get_value(),
 			booking_status: this.controls.booking_status.get_value(),
+			notes: this.controls.notes.get_value(),
 			items: this.rows
 				.map((row) => ({item_code: row.item_code.get_value(), qty: flt(row.qty.get_value()), uom: row.uom}))
 				.filter((row) => row.item_code),

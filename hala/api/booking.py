@@ -228,6 +228,7 @@ def _summary(doc):
 		"posting_date": doc.posting_date,
 		"delivery_date": doc.get("custom_delivery_date"),
 		"booking_status": doc.get("custom_booking_status") or DEFAULT_BOOKING_STATUS,
+		"notes": doc.get("remarks") or "",
 		"company": doc.company,
 		"currency": doc.currency,
 		"net_total": flt(doc.net_total),
@@ -277,6 +278,7 @@ def get_booking(name=None, company=None):
 		"posting_date": nowdate(),
 		"delivery_date": nowdate(),
 		"booking_status": DEFAULT_BOOKING_STATUS,
+		"notes": "",
 		"company": company,
 		"currency": (
 			profile.currency
@@ -348,6 +350,7 @@ def save_booking(booking):
 	doc.customer = data["customer"]
 	doc.posting_date = data.get("posting_date") or nowdate()
 	doc.custom_delivery_date = data.get("delivery_date") or doc.posting_date
+	doc.remarks = data.get("notes") or ""
 	doc.custom_is_booking = 1
 	booking_status = data.get("booking_status") or DEFAULT_BOOKING_STATUS
 	if booking_status not in BOOKING_STATUS_OPTIONS:

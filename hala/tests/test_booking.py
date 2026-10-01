@@ -190,6 +190,7 @@ class TestHalaBooking(IntegrationTestCase):
 				"customer": "Customer",
 				"posting_date": "2026-09-30",
 				"custom_delivery_date": "2026-10-01",
+				"remarks": "Call before delivery",
 				"company": "Company",
 				"currency": "SAR",
 				"company_currency": "SAR",
@@ -204,6 +205,7 @@ class TestHalaBooking(IntegrationTestCase):
 		result = _summary(doc)
 		self.assertEqual(result["paid_amount"], 500)
 		self.assertEqual(result["remaining_amount"], 500)
+		self.assertEqual(result["notes"], "Call before delivery")
 
 	@patch("erpnext.accounts.utils.reconcile_against_document")
 	@patch("hala.api.booking.frappe.get_cached_value", return_value="Exchange Gain/Loss")

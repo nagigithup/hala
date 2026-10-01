@@ -305,6 +305,7 @@
       customer: document.querySelector('[data-booking="customer"]').value,
       posting_date: document.querySelector('[data-booking="posting_date"]').value,
       delivery_date: document.querySelector('[data-booking="delivery_date"]').value,
+      notes: document.querySelector('[data-booking="notes"]').value,
       items: [...document.querySelectorAll("#booking-items tbody tr")].map(row=>({
         item_code: row.querySelector('[data-booking-field="item_code"]').value,
         qty: Number(row.querySelector('[data-booking-field="qty"]').value||0),
@@ -349,7 +350,7 @@
         <div class="panel-head"><h2>الأصناف</h2>${draft?`<button class="btn" id="booking-add-row">＋ إضافة صنف</button>`:""}</div>
         <div class="child-table"><table id="booking-items"><thead><tr><th>الصنف</th><th>الكمية</th><th>السعر</th><th>المبلغ</th><th></th></tr></thead><tbody>${(booking.items.length?booking.items:[{}]).map(bookingRow).join("")}</tbody></table></div>
         </section>
-        <section class="booking-totals"><div><span>المجموع الفرعي</span><strong>${money(booking.net_total,booking.currency)}</strong></div><div><span>الضريبة</span><strong>${money(booking.tax,booking.currency)}</strong></div><div class="grand"><span>الإجمالي</span><strong>${money(booking.grand_total,booking.currency)}</strong></div><div class="paid"><span>المدفوع</span><strong>${money(booking.paid_amount,booking.currency)}</strong></div><div class="remaining"><span>المتبقي</span><strong>${money(booking.remaining_amount,booking.currency)}</strong></div></section>
+        <div class="booking-summary-row"><section class="panel booking-notes-panel"><label class="booking-notes">ملاحظات<textarea data-booking="notes" ${draft?"":"disabled"}>${escapeHtml(booking.notes||"")}</textarea></label></section><section class="booking-totals"><div><span>المجموع الفرعي</span><strong>${money(booking.net_total,booking.currency)}</strong></div><div><span>الضريبة</span><strong>${money(booking.tax,booking.currency)}</strong></div><div class="grand"><span>الإجمالي</span><strong>${money(booking.grand_total,booking.currency)}</strong></div><div class="paid"><span>المدفوع</span><strong>${money(booking.paid_amount,booking.currency)}</strong></div><div class="remaining"><span>المتبقي</span><strong>${money(booking.remaining_amount,booking.currency)}</strong></div></section></div>
         <dialog id="booking-payment-dialog"><form method="dialog"><label>المبلغ<input id="booking-payment-amount" type="number" min="0.01" step="0.01" required></label><div class="actions"><button class="btn" value="cancel">إلغاء</button><button class="btn btn-primary" value="confirm">تأكيد</button></div></form></dialog>
       </div>`;
       setupLinkInputs(content); bindBookingRows();
