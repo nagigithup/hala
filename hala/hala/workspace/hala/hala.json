@@ -17,6 +17,7 @@
   {"dependencies":"","hidden":0,"is_query_report":0,"label":"Item","link_count":0,"link_to":"Item","link_type":"DocType","onboard":1,"type":"Link"},
   {"dependencies":"","hidden":0,"is_query_report":0,"label":"UOM","link_count":0,"link_to":"UOM","link_type":"DocType","onboard":0,"type":"Link"},
   {"dependencies":"","hidden":0,"is_query_report":0,"label":"Item Price","link_count":0,"link_to":"Item Price","link_type":"DocType","onboard":0,"type":"Link"},
+  {"dependencies":"Item, Item Price, Price List","hidden":0,"is_query_report":0,"label":"Item Price Manager","link_count":0,"link_to":"item-price-manager","link_type":"Page","onboard":0,"type":"Link"},
   {"dependencies":"","hidden":0,"is_query_report":0,"label":"Price List","link_count":0,"link_to":"Price List","link_type":"DocType","onboard":0,"type":"Link"},
   {"dependencies":"","hidden":0,"is_query_report":1,"label":"Stock Balance","link_count":0,"link_to":"Stock Balance","link_type":"Report","onboard":0,"report_ref_doctype":"Stock Ledger Entry","type":"Link"},
   {"dependencies":"","hidden":0,"is_query_report":1,"label":"Stock Ledger","link_count":0,"link_to":"Stock Ledger","link_type":"Report","onboard":0,"report_ref_doctype":"Stock Ledger Entry","type":"Link"},
