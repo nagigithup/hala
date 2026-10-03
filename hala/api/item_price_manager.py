@@ -5,11 +5,20 @@ from decimal import Decimal, InvalidOperation
 import frappe
 from frappe import _
 from frappe.utils import cint, flt, getdate, nowdate
+from frappe.utils.xlsxutils import build_xlsx_response, read_xlsx_file_from_attached_file
 
 
 DEFAULT_PAGE_LENGTH = 50
-MAX_PAGE_LENGTH = 100
-MAX_SAVE_CHANGES = 1000
+MAX_PAGE_LENGTH = 2000
+MAX_SAVE_CHANGES = 5000
+MAX_EXPORT_ITEMS = 10000
+FIXED_EXPORT_COLUMNS = ("Item Code", "Item Name", "UOM", "Item Group")
+ITEM_SORT_FIELDS = {
+	"item_code": "name",
+	"item_name": "item_name",
+	"uom": "stock_uom",
+	"item_group": "item_group",
+}
 
 
 def _require_read_permissions() -> None:
@@ -77,7 +86,7 @@ def _current_price_map(item_codes, price_lists, uoms=None):
 	return prices
 
 
-def _get_items(search, item_group, start, page_length):
+def _item_filters(search, item_group):
 	filters = {"disabled": 0}
 	if item_group:
 		filters["item_group"] = item_group
@@ -87,17 +96,45 @@ def _get_items(search, item_group, start, page_length):
 	if search:
 		pattern = f"%{search}%"
 		or_filters = {"name": ["like", pattern], "item_name": ["like", pattern]}
+	return filters, or_filters
+
+
+def _get_items(search, item_group, start, page_length, sort_by="item_code", sort_order="asc"):
+	filters, or_filters = _item_filters(search, item_group)
+	sort_field = ITEM_SORT_FIELDS.get(sort_by, ITEM_SORT_FIELDS["item_code"])
+	sort_order = "desc" if str(sort_order).lower() == "desc" else "asc"
 
 	rows = frappe.get_list(
 		"Item",
 		filters=filters,
 		or_filters=or_filters,
 		fields=["name as item_code", "item_name", "stock_uom as uom", "item_group", "has_variants"],
-		order_by="name asc",
+		order_by=f"{sort_field} {sort_order}, name asc",
 		offset=start,
-		limit=page_length + 1,
+		limit=page_length,
 	)
-	return rows[:page_length], len(rows) > page_length
+	count = frappe.get_list(
+		"Item",
+		filters=filters,
+		or_filters=or_filters,
+		fields=[{"COUNT": "name", "as": "total"}],
+		limit=1,
+	)
+	total = cint(count[0].total) if count else 0
+	return rows, total
+
+
+def _get_price_lists(price_list=None):
+	filters = {"selling": 1, "enabled": 1}
+	if price_list:
+		filters["name"] = price_list
+	return frappe.get_list(
+		"Price List",
+		filters=filters,
+		fields=["name", "currency", "price_not_uom_dependent"],
+		order_by="name asc",
+		limit=0,
+	)
 
 
 @frappe.whitelist()
@@ -107,23 +144,22 @@ def get_price_matrix(
 	price_list: str | None = None,
 	start: int = 0,
 	page_length: int = DEFAULT_PAGE_LENGTH,
+	sort_by: str = "item_code",
+	sort_order: str = "asc",
 ):
 	_require_read_permissions()
 	start = max(cint(start), 0)
 	page_length = min(max(cint(page_length) or DEFAULT_PAGE_LENGTH, 1), MAX_PAGE_LENGTH)
 
-	price_list_filters = {"selling": 1, "enabled": 1}
-	if price_list:
-		price_list_filters["name"] = price_list
-
-	price_lists = frappe.get_list(
-		"Price List",
-		filters=price_list_filters,
-		fields=["name", "currency", "price_not_uom_dependent"],
-		order_by="name asc",
-		limit=0,
+	price_lists = _get_price_lists(price_list)
+	items, total = _get_items(
+		search,
+		item_group,
+		start,
+		page_length,
+		sort_by=sort_by,
+		sort_order=sort_order,
 	)
-	items, has_more = _get_items(search, item_group, start, page_length)
 	prices = _current_price_map(
 		[row.item_code for row in items],
 		[row.name for row in price_lists],
@@ -150,13 +186,156 @@ def get_price_matrix(
 		"pagination": {
 			"start": start,
 			"page_length": page_length,
-			"has_more": has_more,
+			"total": total,
+			"has_more": start + len(items) < total,
+		},
+		"sorting": {
+			"sort_by": sort_by if sort_by in ITEM_SORT_FIELDS else "item_code",
+			"sort_order": "desc" if str(sort_order).lower() == "desc" else "asc",
 		},
 		"permissions": {
 			"can_write": bool(frappe.has_permission("Item Price", "write")),
 			"can_create": bool(frappe.has_permission("Item Price", "create")),
 		},
 	}
+
+
+def _get_export_items(search, item_group, sort_by, sort_order):
+	filters, or_filters = _item_filters(search, item_group)
+	sort_field = ITEM_SORT_FIELDS.get(sort_by, ITEM_SORT_FIELDS["item_code"])
+	sort_order = "desc" if str(sort_order).lower() == "desc" else "asc"
+	items = frappe.get_list(
+		"Item",
+		filters=filters,
+		or_filters=or_filters,
+		fields=["name as item_code", "item_name", "stock_uom as uom", "item_group"],
+		order_by=f"{sort_field} {sort_order}, name asc",
+		limit=MAX_EXPORT_ITEMS + 1,
+	)
+	if len(items) > MAX_EXPORT_ITEMS:
+		frappe.throw(
+			_("Excel export is limited to {0} Items. Apply more filters and try again.").format(
+				MAX_EXPORT_ITEMS
+			)
+		)
+	return items
+
+
+def _build_export_rows(search=None, item_group=None, price_list=None, sort_by="item_code", sort_order="asc"):
+	price_lists = _get_price_lists(price_list)
+	items = _get_export_items(search, item_group, sort_by, sort_order)
+	prices = _current_price_map(
+		[row.item_code for row in items],
+		[row.name for row in price_lists],
+		[row.uom for row in items],
+	)
+	rows = [[*FIXED_EXPORT_COLUMNS, *[row.name for row in price_lists]]]
+	for item in items:
+		row = [item.item_code, item.item_name, item.uom, item.item_group]
+		for price_list_row in price_lists:
+			price = prices.get((item.item_code, price_list_row.name, item.uom))
+			row.append(flt(price.price_list_rate) if price else None)
+		rows.append(row)
+	return rows
+
+
+@frappe.whitelist(methods=["POST"])
+def export_price_matrix(
+	search: str | None = None,
+	item_group: str | None = None,
+	price_list: str | None = None,
+	sort_by: str = "item_code",
+	sort_order: str = "asc",
+):
+	_require_read_permissions()
+	rows = _build_export_rows(search, item_group, price_list, sort_by, sort_order)
+	build_xlsx_response(rows, "Item Price Manager")
+
+
+def _changes_from_import_rows(rows):
+	if not rows or len(rows) < 2:
+		frappe.throw(_("The Excel file does not contain any Item rows."))
+	header = [str(value or "").strip() for value in rows[0]]
+	if tuple(header[: len(FIXED_EXPORT_COLUMNS)]) != FIXED_EXPORT_COLUMNS:
+		frappe.throw(
+			_("Use an Excel file exported from Item Price Manager. The fixed columns are not valid.")
+		)
+	price_list_names = header[len(FIXED_EXPORT_COLUMNS) :]
+	while price_list_names and not price_list_names[-1]:
+		price_list_names.pop()
+	if not price_list_names:
+		frappe.throw(_("The Excel file does not contain a Selling Price List column."))
+	if any(not value for value in price_list_names):
+		frappe.throw(_("Price List columns in the Excel file cannot be blank."))
+	if len(price_list_names) != len(set(price_list_names)):
+		frappe.throw(_("The Excel file contains duplicate Price List columns."))
+
+	price_lists = _get_price_lists()
+	active_price_lists = {row.name for row in price_lists}
+	invalid_price_lists = set(price_list_names) - active_price_lists
+	if invalid_price_lists:
+		frappe.throw(
+			_("These Price Lists are not enabled Selling Price Lists: {0}").format(
+				", ".join(sorted(invalid_price_lists))
+			)
+		)
+
+	data_rows = [row for row in rows[1:] if any(value not in (None, "") for value in row)]
+	if len(data_rows) > MAX_EXPORT_ITEMS:
+		frappe.throw(_("A maximum of {0} Item rows can be imported at once.").format(MAX_EXPORT_ITEMS))
+	item_codes = [str(row[0] or "").strip() for row in data_rows if row]
+	if not all(item_codes):
+		frappe.throw(_("Every imported row must contain an Item Code."))
+	if len(item_codes) != len(set(item_codes)):
+		frappe.throw(_("The Excel file contains duplicate Item rows."))
+
+	items = frappe.get_list(
+		"Item",
+		filters={"name": ["in", item_codes], "disabled": 0},
+		fields=["name", "stock_uom", "has_variants"],
+		limit=0,
+	)
+	items_by_name = {row.name: row for row in items}
+	missing_items = set(item_codes) - set(items_by_name)
+	if missing_items:
+		frappe.throw(
+			_("These Items are missing, disabled, or not permitted: {0}").format(
+				", ".join(sorted(missing_items))
+			)
+		)
+
+	changes = []
+	for row_number, row in enumerate(data_rows, 2):
+		item_code = str(row[0] or "").strip()
+		item = items_by_name[item_code]
+		for offset, price_list_name in enumerate(price_list_names, len(FIXED_EXPORT_COLUMNS)):
+			value = row[offset] if offset < len(row) else None
+			if value in (None, ""):
+				continue
+			changes.append(
+				{
+					"item_code": item_code,
+					"price_list": price_list_name,
+					"uom": item.stock_uom,
+					"price_list_rate": _parse_rate(value, row_number),
+				}
+			)
+	if not changes:
+		frappe.throw(_("The Excel file does not contain any prices to import."))
+	return changes
+
+
+@frappe.whitelist(methods=["POST"])
+def import_price_matrix():
+	_require_read_permissions()
+	file_name = str(frappe.local.uploaded_filename or "")
+	content = frappe.local.uploaded_file
+	if not content or not file_name.lower().endswith(".xlsx"):
+		frappe.throw(_("Please upload an XLSX file exported from Item Price Manager."))
+	rows = read_xlsx_file_from_attached_file(fcontent=content, read_only=True)
+	result = save_prices(_changes_from_import_rows(rows))
+	result["rows"] = max(len(rows) - 1, 0)
+	return result
 
 
 def _parse_rate(value, row_number: int) -> float:

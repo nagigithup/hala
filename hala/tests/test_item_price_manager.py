@@ -3,8 +3,16 @@ from unittest.mock import patch
 import frappe
 from frappe.tests import IntegrationTestCase
 from frappe.utils import nowdate
+from frappe.utils.xlsxutils import make_xlsx
 
-from hala.api.item_price_manager import get_price_matrix, save_prices
+from hala.api.item_price_manager import (
+	_build_export_rows,
+	_changes_from_import_rows,
+	_get_items,
+	get_price_matrix,
+	import_price_matrix,
+	save_prices,
+)
 
 
 class TestItemPriceManager(IntegrationTestCase):
@@ -209,6 +217,7 @@ class TestItemPriceManager(IntegrationTestCase):
 			page_length=2,
 		)
 		self.assertEqual(len(first_page["items"]), 2)
+		self.assertEqual(first_page["pagination"]["total"], 3)
 		self.assertTrue(first_page["pagination"]["has_more"])
 		self.assertTrue(all(row.item_group == self.item_group for row in first_page["items"]))
 
@@ -224,7 +233,32 @@ class TestItemPriceManager(IntegrationTestCase):
 			page_length=2,
 		)
 		self.assertEqual(len(second_page["items"]), 1)
+		self.assertEqual(second_page["pagination"]["total"], 3)
 		self.assertFalse(second_page["pagination"]["has_more"])
+
+		descending = get_price_matrix(
+			search=f"_Test Hala IPM {self.suffix} Search",
+			item_group=self.item_group,
+			start=0,
+			page_length=2,
+			sort_by="item_code",
+			sort_order="desc",
+		)
+		self.assertEqual(
+			[row.item_code for row in descending["items"]],
+			[items[2].name, items[1].name],
+		)
+		self.assertEqual(descending["sorting"], {"sort_by": "item_code", "sort_order": "desc"})
+
+	def test_item_group_pagination_reports_more_than_one_hundred_items(self):
+		page = [frappe._dict(item_code=f"ITEM-{index:03}") for index in range(100)]
+		with patch("frappe.get_list", side_effect=[page, [frappe._dict(total=101)]]) as get_list:
+			items, total = _get_items("", self.item_group, 0, 100)
+
+		self.assertEqual(len(items), 100)
+		self.assertEqual(total, 101)
+		self.assertEqual(get_list.call_args_list[0].kwargs["filters"]["item_group"], self.item_group)
+		self.assertEqual(get_list.call_args_list[0].kwargs["limit"], 100)
 
 	def test_selling_price_list_filter_returns_only_the_selected_column(self):
 		item = self.make_item()
@@ -238,6 +272,50 @@ class TestItemPriceManager(IntegrationTestCase):
 		self.assertEqual([row.name for row in matrix["price_lists"]], [dealer.name])
 		self.assertEqual(matrix["prices"][item.name][dealer.name]["rate"], 90)
 		self.assertNotIn(retail.name, matrix["prices"][item.name])
+
+	def test_excel_matrix_export_and_import_use_the_visible_shape(self):
+		item = self.make_item()
+		price_list = self.make_price_list()
+		item_price = self.make_item_price(item, price_list, 25)
+
+		rows = _build_export_rows(search=item.name, price_list=price_list.name)
+
+		self.assertEqual(rows[0], ["Item Code", "Item Name", "UOM", "Item Group", price_list.name])
+		self.assertEqual(rows[1][0], item.name)
+		self.assertEqual(rows[1][4], 25)
+		rows[1][4] = 30
+		frappe.local.uploaded_file = make_xlsx(rows, "Item Price Manager").getvalue()
+		frappe.local.uploaded_filename = "item-price-manager.xlsx"
+		try:
+			result = import_price_matrix()
+		finally:
+			frappe.local.uploaded_file = None
+			frappe.local.uploaded_filename = None
+
+		self.assertEqual(result, {"created": 0, "updated": 1, "unchanged": 0, "rows": 1})
+		self.assertEqual(frappe.db.get_value("Item Price", item_price.name, "price_list_rate"), 30)
+
+	def test_excel_import_rejects_non_selling_price_list_columns(self):
+		item = self.make_item()
+		buying_name = f"_Test Hala IPM Buying Import {self.suffix}"
+		frappe.get_doc(
+			{
+				"doctype": "Price List",
+				"price_list_name": buying_name,
+				"currency": self.currency,
+				"enabled": 1,
+				"selling": 0,
+				"buying": 1,
+			}
+		).insert()
+
+		with self.assertRaises(frappe.ValidationError):
+			_changes_from_import_rows(
+				[
+					["Item Code", "Item Name", "UOM", "Item Group", buying_name],
+					[item.name, item.item_name, item.stock_uom, item.item_group, 50],
+				]
+			)
 
 	def test_buying_lists_and_customer_specific_prices_are_excluded(self):
 		item = self.make_item()

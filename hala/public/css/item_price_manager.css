@@ -79,6 +79,25 @@
 	z-index: 4;
 }
 
+.hala-ipm-sort {
+	align-items: center;
+	background: transparent;
+	border: 0;
+	color: inherit;
+	cursor: pointer;
+	display: flex;
+	font: inherit;
+	gap: 5px;
+	justify-content: space-between;
+	padding: 0;
+	text-align: start;
+	width: 100%;
+}
+
+.hala-ipm-sort:hover {
+	color: var(--primary);
+}
+
 .hala-ipm-table .hala-ipm-fixed {
 	position: sticky;
 	z-index: 2;

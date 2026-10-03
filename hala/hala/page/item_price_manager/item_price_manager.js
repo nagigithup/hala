@@ -17,6 +17,8 @@ class ItemPriceManager {
 		this.page.main.addClass("hala-item-price-manager-page");
 		this.page_length = 50;
 		this.start = 0;
+		this.sort_by = "item_code";
+		this.sort_order = "asc";
 		this.changes = new Map();
 		this.cell_map = new Map();
 		this.loaded = false;
@@ -107,7 +109,7 @@ class ItemPriceManager {
 		this.make_control("page_length", {
 			fieldtype: "Select",
 			label: __("Rows per page"),
-			options: ["25", "50", "100"],
+			options: ["25", "50", "100", "2000"],
 			default: "50",
 		});
 		this.committed_filters = this.filter_values();
@@ -125,6 +127,16 @@ class ItemPriceManager {
 			() => this.discard_changes(),
 			"undo-2",
 		);
+		this.$export = this.page.add_inner_button(
+			__("Export Excel"),
+			() => this.export_excel(),
+			__("Excel"),
+		);
+		this.$import = this.page.add_inner_button(
+			__("Import Excel"),
+			() => this.import_excel(),
+			__("Excel"),
+		);
 		this.update_actions();
 	}
 
@@ -138,6 +150,9 @@ class ItemPriceManager {
 		this.$shell.on("click", '[data-action="previous"]', () => this.change_page(-1));
 		this.$shell.on("click", '[data-action="next"]', () => this.change_page(1));
 		this.$shell.on("input", ".hala-ipm-price-input", (event) => this.price_changed(event));
+		this.$shell.on("click", ".hala-ipm-sort", (event) => {
+			this.sort_clicked($(event.currentTarget).data("sort-by"));
+		});
 	}
 
 	async show() {
@@ -236,6 +251,23 @@ class ItemPriceManager {
 		this.load_data();
 	}
 
+	sort_clicked(sort_by) {
+		const apply_sort = () => {
+			this.sort_order = this.sort_by === sort_by && this.sort_order === "asc" ? "desc" : "asc";
+			this.sort_by = sort_by;
+			this.start = 0;
+			this.load_data();
+		};
+		if (!this.changes.size) {
+			apply_sort();
+			return;
+		}
+		frappe.confirm(__("Discard the unsaved price changes and sort the table?"), () => {
+			this.clear_changes();
+			apply_sort();
+		});
+	}
+
 	async load_data() {
 		if (this.loading || this.saving) return;
 		this.loading = true;
@@ -245,12 +277,19 @@ class ItemPriceManager {
 			this.page_length = filters.page_length;
 			const {message} = await frappe.call({
 				method: "hala.api.item_price_manager.get_price_matrix",
-				args: {...filters, start: this.start},
+				args: {
+					...filters,
+					start: this.start,
+					sort_by: this.sort_by,
+					sort_order: this.sort_order,
+				},
 			});
 			this.data = message;
 			this.loaded = true;
 			this.start = message.pagination.start;
 			this.page_length = message.pagination.page_length;
+			this.sort_by = message.sorting.sort_by;
+			this.sort_order = message.sorting.sort_order;
 			this.committed_filters = filters;
 			this.clear_changes();
 			this.render_table();
@@ -280,6 +319,17 @@ class ItemPriceManager {
 	can_edit_cell(price, item) {
 		if (item.has_variants) return false;
 		return price ? this.data.permissions.can_write : this.data.permissions.can_create;
+	}
+
+	sortable_heading(sort_by, label, classes) {
+		const active = this.sort_by === sort_by;
+		const icon = active ? (this.sort_order === "asc" ? "arrow-up" : "arrow-down") : "chevrons-up-down";
+		return `
+			<th class="hala-ipm-fixed ${classes}">
+				<button type="button" class="hala-ipm-sort" data-sort-by="${sort_by}">
+					<span>${label}</span>${frappe.utils.icon(icon, "xs")}
+				</button>
+			</th>`;
 	}
 
 	render_table() {
@@ -344,10 +394,10 @@ class ItemPriceManager {
 		this.$table.html(`
 			<table class="table table-bordered hala-ipm-table">
 				<thead><tr>
-					<th class="hala-ipm-fixed hala-ipm-code">${__("Item Code")}</th>
-					<th class="hala-ipm-fixed hala-ipm-name">${__("Item Name")}</th>
-					<th class="hala-ipm-fixed hala-ipm-uom">${__("UOM")}</th>
-					<th class="hala-ipm-fixed hala-ipm-group">${__("Item Group")}</th>
+					${this.sortable_heading("item_code", __("Item Code"), "hala-ipm-code")}
+					${this.sortable_heading("item_name", __("Item Name"), "hala-ipm-name")}
+					${this.sortable_heading("uom", __("UOM"), "hala-ipm-uom")}
+					${this.sortable_heading("item_group", __("Item Group"), "hala-ipm-group")}
 					${headers}
 				</tr></thead>
 				<tbody>${body}</tbody>
@@ -389,6 +439,14 @@ class ItemPriceManager {
 			?.prop("disabled", !can_save)
 			.html(`${frappe.utils.icon("check", "sm")} <span>${__("Save Changes ({0})", [count])}</span>`);
 		this.$discard?.prop("disabled", count === 0 || this.saving);
+		this.$export?.prop("disabled", count > 0 || this.loading || this.saving);
+		this.$import?.prop(
+			"disabled",
+			count > 0 ||
+				this.loading ||
+				this.saving ||
+				!(this.data?.permissions?.can_create || this.data?.permissions?.can_write),
+		);
 	}
 
 	clear_changes() {
@@ -451,9 +509,53 @@ class ItemPriceManager {
 		}
 	}
 
+	export_excel() {
+		if (this.changes.size) {
+			frappe.msgprint(__("Save or discard pending changes before exporting."));
+			return;
+		}
+		const {page_length: _page_length, ...filters} = this.filter_values();
+		open_url_post("/api/method/hala.api.item_price_manager.export_price_matrix", {
+			...filters,
+			sort_by: this.sort_by,
+			sort_order: this.sort_order,
+		});
+	}
+
+	import_excel() {
+		if (this.changes.size) {
+			frappe.msgprint(__("Save or discard pending changes before importing."));
+			return;
+		}
+		new frappe.ui.FileUploader({
+			method: "hala.api.item_price_manager.import_price_matrix",
+			dialog_title: __("Import Item Prices from Excel"),
+			allow_multiple: false,
+			allow_web_link: false,
+			allow_take_photo: false,
+			allow_toggle_private: false,
+			restrictions: {allowed_file_types: [".xlsx"]},
+			on_success: (_file, response) => {
+				const result = response?.message || {};
+				frappe.show_alert({
+					message: __("Item Prices imported: {0} created, {1} updated.", [
+						result.created || 0,
+						result.updated || 0,
+					]),
+					indicator: "green",
+				});
+				this.start = 0;
+				this.load_data();
+			},
+		});
+	}
+
 	render_pagination() {
 		const page_number = Math.floor(this.start / this.page_length) + 1;
-		this.$page_info.text(__("Page {0} · {1} items shown", [page_number, this.data.items.length]));
+		const total = this.data.pagination.total;
+		const first = total ? this.start + 1 : 0;
+		const last = this.start + this.data.items.length;
+		this.$page_info.text(__("Page {0} · {1}-{2} of {3} Items", [page_number, first, last, total]));
 		this.$shell.find('[data-action="previous"]').prop("disabled", this.start === 0);
 		this.$shell.find('[data-action="next"]').prop("disabled", !this.data.pagination.has_more);
 	}
