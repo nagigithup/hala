@@ -214,8 +214,10 @@ def _validate_submitted_price_list_rates(data, effective_price_list):
 def update_invoice(data):
 	"""Enforce customer price-list selection before POS Next saves a draft."""
 	from pos_next.api.invoices import update_invoice as pos_next_update_invoice
+	from hala.api.pos_next_security import _secured_invoice_payload
 
-	payload = json.loads(data) if isinstance(data, str) else dict(data)
+	payload = _secured_invoice_payload(data)
+	payload = json.loads(payload) if isinstance(payload, str) else dict(payload)
 	effective_price_list = resolve_effective_price_list(
 		customer=payload.get("customer"), pos_profile=payload.get("pos_profile")
 	)

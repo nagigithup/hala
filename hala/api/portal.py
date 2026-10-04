@@ -8,6 +8,7 @@ from frappe import _
 from frappe.utils import cint, flt, getdate, nowdate
 
 from hala.access import require_portal_access
+from hala.cashier_profile import assign_current_cashier_profile, validate_cashier_document
 
 
 # This is deliberately an allowlist. The portal never accepts an arbitrary
@@ -359,9 +360,13 @@ def save_document(doc):
 	if name and frappe.db.exists(doctype, name):
 		target = frappe.get_doc(doctype, name)
 		target.check_permission("write")
+		if doctype in ("Sales Invoice", "Payment Entry"):
+			validate_cashier_document(target)
 		payload.pop("doctype", None)
 		payload.pop("name", None)
 		payload.pop("docstatus", None)
+		payload.pop("pos_profile", None)
+		payload.pop("custom_cashier_profile", None)
 		target.update(payload)
 		target.save()
 	else:
@@ -369,6 +374,8 @@ def save_document(doc):
 		payload.pop("name", None)
 		payload["docstatus"] = 0
 		target = frappe.get_doc(payload)
+		if doctype in ("Sales Invoice", "Payment Entry"):
+			assign_current_cashier_profile(target)
 		target.insert()
 	return {"doc": _safe_doc_dict(target), "actions": _actions(target)}
 
@@ -427,7 +434,7 @@ def outstanding_invoices(company, party_type, party, party_account, payment_type
 		frappe.throw(_("Party Type must be Customer or Supplier."))
 	frappe.has_permission(party_type, "read", party, throw=True)
 	from erpnext.accounts.doctype.payment_entry.payment_entry import get_outstanding_reference_documents
-	return get_outstanding_reference_documents({
+	rows = get_outstanding_reference_documents({
 		"company": company,
 		"party_type": party_type,
 		"party": party,
@@ -436,6 +443,12 @@ def outstanding_invoices(company, party_type, party, party_account, payment_type
 		"posting_date": posting_date or nowdate(),
 		"get_outstanding_invoices": True,
 	}) or []
+	return [
+		row
+		for row in rows
+		if row.get("voucher_type") != "Sales Invoice"
+		or frappe.has_permission("Sales Invoice", "read", row.get("voucher_no"))
+	]
 
 
 @frappe.whitelist()

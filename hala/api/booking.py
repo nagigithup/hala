@@ -8,6 +8,12 @@ from frappe.utils import cint, flt, nowdate
 
 from hala.access import require_portal_access
 from hala.api.pos_pricing import resolve_effective_price_list
+from hala.cashier_profile import (
+	get_current_cashier_context,
+	get_current_cashier_profile,
+	is_cashier_isolation_user,
+	validate_cashier_document,
+)
 
 
 AMOUNT_TOLERANCE = 0.005
@@ -21,15 +27,7 @@ def _payload(value):
 
 
 def _active_shift(required=True):
-	from pos_next.api.shifts import check_opening_shift
-
-	data = check_opening_shift(frappe.session.user)
-	if not data and required:
-		frappe.throw(
-			_("No active POS opening shift found for this user.")
-			+ "<br>"
-			+ _("لا توجد وردية كاشير مفتوحة لهذا المستخدم.")
-		)
+	data = get_current_cashier_context(required=required)
 	if data and data["pos_opening_shift"].user != frappe.session.user:
 		frappe.throw(_("The active POS opening shift does not belong to this user."), frappe.PermissionError)
 	return data
@@ -160,9 +158,12 @@ def _make_booking_taxes_inclusive(doc):
 def get_open_bookings():
 	require_portal_access()
 	frappe.has_permission("Sales Invoice", "read", throw=True)
+	filters = {"docstatus": 0, "custom_is_booking": 1}
+	if is_cashier_isolation_user():
+		filters["pos_profile"] = get_current_cashier_profile()
 	bookings = frappe.get_list(
 		"Sales Invoice",
-		filters={"docstatus": 0, "custom_is_booking": 1},
+		filters=filters,
 		fields=[
 			"name",
 			"customer",
@@ -255,6 +256,7 @@ def _summary(doc):
 def _get_booking(name, permission="read"):
 	doc = frappe.get_doc("Sales Invoice", name)
 	doc.check_permission(permission)
+	validate_cashier_document(doc)
 	if doc.docstatus == 0 and not cint(doc.get("custom_is_booking")):
 		frappe.throw(_("Sales Invoice {0} is not a Hala booking.").format(name))
 	return doc
@@ -450,6 +452,7 @@ def create_booking_payment(booking_name, amount, request_id):
 			"reference_no": shift.name,
 			"reference_date": nowdate(),
 			"custom_booking_invoice": doc.name,
+			"custom_cashier_profile": doc.pos_profile,
 			"custom_booking_payment_request_id": request_id,
 			"remarks": _("Advance payment for Hala booking {0}").format(doc.name),
 		}

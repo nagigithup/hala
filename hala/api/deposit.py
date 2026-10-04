@@ -8,6 +8,11 @@ from frappe.utils import cint, flt, nowdate
 
 from hala.access import require_portal_access
 from hala.api.booking import _active_shift, _default_payment_method
+from hala.cashier_profile import (
+	is_cashier_isolation_user,
+	validate_cashier_document,
+	validate_cashier_profile,
+)
 
 
 DEPOSIT_STATUS_OPEN = "Open"
@@ -180,6 +185,12 @@ def _make_payment_entry(
 	original_payment=None,
 ):
 	payment_type = "Pay" if original_payment else "Receive"
+	cashier_profile = context.profile.name
+	if original_payment:
+		cashier_profile = frappe.db.get_value(
+			"Payment Entry", original_payment, "custom_cashier_profile"
+		)
+		validate_cashier_profile(cashier_profile)
 	pe = frappe.new_doc("Payment Entry")
 	pe.update(
 		{
@@ -203,6 +214,7 @@ def _make_payment_entry(
 			"received_amount": amount,
 			"cost_center": context.profile.get("cost_center"),
 			"custom_is_deposit": 1,
+			"custom_cashier_profile": cashier_profile,
 			"custom_deposit_item": item_code,
 			"custom_deposit_description": description,
 			"custom_deposit_qty": qty,
@@ -230,6 +242,7 @@ def _get_original_deposit(name, for_update=False):
 	if for_update:
 		frappe.db.sql("SELECT name FROM `tabPayment Entry` WHERE name = %s FOR UPDATE", (name,))
 	doc = frappe.get_doc("Payment Entry", name)
+	validate_cashier_document(doc)
 	if (
 		doc.docstatus != 1
 		or doc.payment_type != "Receive"
@@ -299,15 +312,18 @@ def get_deposit(name):
 def get_deposits(include_refunded=0):
 	require_portal_access()
 	context = _cashier_context()
+	filters = {
+		"docstatus": 1,
+		"payment_type": "Receive",
+		"custom_is_deposit": 1,
+		"custom_original_deposit_payment": ["is", "not set"],
+		"company": context.company,
+	}
+	if is_cashier_isolation_user():
+		filters["custom_cashier_profile"] = context.profile.name
 	rows = frappe.get_all(
 		"Payment Entry",
-		filters={
-			"docstatus": 1,
-			"payment_type": "Receive",
-			"custom_is_deposit": 1,
-			"custom_original_deposit_payment": ["is", "not set"],
-			"company": context.company,
-		},
+		filters=filters,
 		fields=["name"],
 		order_by="posting_date desc, creation desc",
 		limit=500,

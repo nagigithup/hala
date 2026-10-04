@@ -48,11 +48,21 @@ def ensure_booking_fields():
 			],
 			"Payment Entry": [
 				{
+					"fieldname": "custom_cashier_profile",
+					"label": "Cashier Profile",
+					"fieldtype": "Link",
+					"options": "POS Profile",
+					"insert_after": "reference_date",
+					"read_only": 1,
+					"no_copy": 1,
+					"search_index": 1,
+				},
+				{
 					"fieldname": "custom_booking_invoice",
 					"label": "Booking Invoice",
 					"fieldtype": "Link",
 					"options": "Sales Invoice",
-					"insert_after": "reference_date",
+					"insert_after": "custom_cashier_profile",
 					"read_only": 1,
 					"no_copy": 1,
 				},

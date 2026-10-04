@@ -9,10 +9,28 @@ from hala.api.deposit import (
 	DEPOSIT_STATUS_REFUNDED,
 	_deposit_state,
 	_make_payment_entry,
+	get_deposits,
 )
 
 
 class TestHalaDeposit(IntegrationTestCase):
+	@patch("hala.api.deposit.frappe.get_all", return_value=[])
+	@patch("hala.api.deposit.is_cashier_isolation_user", return_value=True)
+	@patch("hala.api.deposit.require_portal_access")
+	@patch("hala.api.deposit._cashier_context")
+	def test_deposit_list_is_filtered_by_cashier_profile(
+		self, cashier_context, _portal_access, _is_cashier, get_all
+	):
+		cashier_context.return_value = frappe._dict(
+			company="Company", profile=frappe._dict(name="Profile A")
+		)
+
+		get_deposits()
+
+		self.assertEqual(
+			get_all.call_args.kwargs["filters"]["custom_cashier_profile"], "Profile A"
+		)
+
 	def test_deposit_schema_page_and_receipt_are_installed(self):
 		for fieldname in (
 			"custom_is_deposit",
@@ -73,7 +91,7 @@ class TestHalaDeposit(IntegrationTestCase):
 				"party_account": "Debtors - C",
 				"party_currency": "SAR",
 				"shift": frappe._dict({"name": "POS-OPEN-1"}),
-				"profile": frappe._dict({"cost_center": "Main - C"}),
+				"profile": frappe._dict({"name": "Profile A", "cost_center": "Main - C"}),
 			}
 		)
 		with patch("hala.api.deposit.frappe.new_doc", return_value=pe):
@@ -92,6 +110,7 @@ class TestHalaDeposit(IntegrationTestCase):
 		self.assertEqual(values["paid_from"], "Debtors - C")
 		self.assertEqual(values["paid_to"], "Cash - C")
 		self.assertEqual(values["reference_no"], "POS-OPEN-1")
+		self.assertEqual(values["custom_cashier_profile"], "Profile A")
 		self.assertEqual(values["custom_deposit_balance"], 500)
 		pe.set.assert_called_once_with("references", [])
 		pe.insert.assert_called_once_with()
@@ -108,10 +127,14 @@ class TestHalaDeposit(IntegrationTestCase):
 				"party_account": "Debtors - C",
 				"party_currency": "SAR",
 				"shift": frappe._dict({"name": "POS-OPEN-1"}),
-				"profile": frappe._dict({"cost_center": "Main - C"}),
+				"profile": frappe._dict({"name": "Profile A", "cost_center": "Main - C"}),
 			}
 		)
-		with patch("hala.api.deposit.frappe.new_doc", return_value=pe):
+		with (
+			patch("hala.api.deposit.frappe.new_doc", return_value=pe),
+			patch("hala.api.deposit.frappe.db.get_value", return_value="Profile A"),
+			patch("hala.api.deposit.validate_cashier_profile"),
+		):
 			_make_payment_entry(
 				context=context,
 				customer="Customer",
@@ -125,4 +148,5 @@ class TestHalaDeposit(IntegrationTestCase):
 		self.assertEqual(values["paid_from"], "Cash - C")
 		self.assertEqual(values["paid_to"], "Debtors - C")
 		self.assertEqual(values["custom_original_deposit_payment"], "ACC-PAY-1")
+		self.assertEqual(values["custom_cashier_profile"], "Profile A")
 		pe.set.assert_called_once_with("references", [])
