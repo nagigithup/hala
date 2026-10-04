@@ -1,0 +1,217 @@
+.hala-cashier-desk-page {
+	background: var(--subtle-fg);
+}
+
+.hala-cashier-layout {
+	display: grid;
+	grid-template-columns: 184px minmax(0, 1fr);
+	gap: 16px;
+	width: 100%;
+	max-width: 1440px;
+	margin: 0 auto;
+	padding: 16px 4px 40px;
+	direction: rtl;
+}
+
+.hala-cashier-sidebar {
+	position: sticky;
+	top: calc(var(--navbar-height, 48px) + 16px);
+	align-self: start;
+	padding: 14px 10px;
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius-lg);
+	background: var(--card-bg);
+	box-shadow: var(--shadow-xs);
+}
+
+.hala-cashier-sidebar-header,
+.hala-cashier-brand,
+.hala-cashier-nav-item {
+	display: flex;
+	align-items: center;
+}
+
+.hala-cashier-sidebar-header {
+	justify-content: space-between;
+	padding: 2px 6px 14px;
+}
+
+.hala-cashier-brand {
+	gap: 8px;
+	color: var(--heading-color);
+	font-size: var(--text-sm);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+}
+
+.hala-cashier-brand-mark {
+	display: grid;
+	width: 30px;
+	height: 30px;
+	place-items: center;
+	border-radius: 9px;
+	background: var(--primary);
+	color: var(--white);
+	font-size: 15px;
+	letter-spacing: 0;
+}
+
+.hala-cashier-menu-toggle {
+	display: none;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	place-items: center;
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius-md);
+	background: var(--control-bg);
+	color: var(--text-color);
+}
+
+.hala-cashier-nav {
+	display: grid;
+	gap: 5px;
+}
+
+.hala-cashier-nav-item {
+	min-height: 46px;
+	gap: 10px;
+	padding: 9px 10px;
+	border-radius: var(--border-radius-md);
+	color: var(--text-color);
+	font-weight: 500;
+	text-decoration: none;
+	transition: background-color 120ms ease, color 120ms ease;
+}
+
+.hala-cashier-nav-item:hover {
+	background: var(--control-bg);
+	color: var(--text-color);
+	text-decoration: none;
+}
+
+.hala-cashier-nav-item.is-active {
+	background: var(--bg-blue);
+	color: var(--text-on-blue);
+	font-weight: 700;
+}
+
+.hala-cashier-nav-icon {
+	display: inline-flex;
+	flex: 0 0 auto;
+}
+
+.hala-cashier-content {
+	min-width: 0;
+}
+
+.hala-cashier-page-shell {
+	max-width: 1180px;
+	margin: 0 auto;
+	text-align: right;
+}
+
+.hala-cashier-card,
+.hala-cashier-totals {
+	border: 1px solid var(--border-color);
+	border-radius: var(--border-radius-lg);
+	background: var(--card-bg);
+	box-shadow: var(--shadow-xs);
+}
+
+.hala-cashier-card {
+	margin-bottom: 16px;
+	padding: 20px 22px;
+}
+
+.hala-cashier-heading,
+.hala-cashier-section-heading,
+.hala-cashier-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.hala-cashier-heading h2,
+.hala-cashier-section-heading h3 {
+	margin: 3px 0 5px;
+}
+
+.hala-cashier-heading p,
+.hala-cashier-section-heading p {
+	margin: 0;
+	color: var(--text-muted);
+}
+
+.hala-cashier-kicker {
+	color: var(--text-muted);
+	font-size: var(--text-xs);
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+@media (max-width: 991px) {
+	.hala-cashier-layout {
+		grid-template-columns: 164px minmax(0, 1fr);
+		gap: 12px;
+	}
+
+	.hala-cashier-nav-item {
+		padding-inline: 8px;
+	}
+}
+
+@media (max-width: 767px) {
+	.hala-cashier-layout {
+		display: block;
+		padding-top: 8px;
+	}
+
+	.hala-cashier-sidebar {
+		position: static;
+		margin-bottom: 12px;
+		padding: 8px;
+	}
+
+	.hala-cashier-sidebar-header {
+		padding: 0;
+	}
+
+	.hala-cashier-menu-toggle {
+		display: grid;
+	}
+
+	.hala-cashier-nav {
+		display: none;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 6px;
+		padding-top: 8px;
+	}
+
+	.hala-cashier-sidebar.is-open .hala-cashier-nav {
+		display: grid;
+	}
+
+	.hala-cashier-card {
+		padding: 16px;
+	}
+
+	.hala-cashier-heading,
+	.hala-cashier-section-heading {
+		align-items: flex-start;
+		flex-direction: column;
+	}
+
+	.hala-cashier-actions {
+		flex-wrap: wrap;
+		justify-content: flex-start;
+	}
+}
+
+@media (max-width: 479px) {
+	.hala-cashier-nav {
+		grid-template-columns: 1fr;
+	}
+}

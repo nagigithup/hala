@@ -7,6 +7,9 @@ app_license = "mit"
 
 required_apps = ["erpnext"]
 
+app_include_css = "/assets/hala/css/cashier_layout.css"
+app_include_js = "/assets/hala/js/cashier_layout.js"
+
 website_route_rules = [
 	{"from_route": "/hala", "to_route": "hala"},
 	{"from_route": "/hala/<path:app_path>", "to_route": "hala"},

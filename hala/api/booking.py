@@ -242,6 +242,7 @@ def _summary(doc):
 			{
 				"item_code": row.item_code,
 				"item_name": row.item_name,
+				"description": row.description or "",
 				"qty": flt(row.qty),
 				"uom": row.uom,
 				"rate": flt(row.rate),
@@ -314,6 +315,7 @@ def get_booking_item(item_code, customer=None, qty=1, posting_date=None):
 	return {
 		"item_code": item_code,
 		"item_name": details.get("item_name") or item_code,
+		"description": details.get("description") or "",
 		"uom": details.get("uom"),
 		"rate": flt(details.get("rate") or details.get("price_list_rate")),
 	}
@@ -371,7 +373,10 @@ def save_booking(booking):
 		if qty <= 0:
 			frappe.throw(_("Quantity must be greater than zero for item {0}.").format(item.get("item_code")))
 		frappe.has_permission("Item", "read", item.get("item_code"), throw=True)
-		doc.append("items", {"item_code": item.get("item_code"), "qty": qty, "uom": item.get("uom")})
+		row = {"item_code": item.get("item_code"), "qty": qty, "uom": item.get("uom")}
+		if "description" in item:
+			row["description"] = item.get("description") or ""
+		doc.append("items", row)
 
 	if name:
 		doc.save()

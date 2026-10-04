@@ -13,6 +13,7 @@ class HalaDepositPage {
 			parent: wrapper,
 			title: __("Receive Deposit"),
 			single_column: true,
+			hide_sidebar: true,
 		});
 		this.page.main.addClass("hala-deposit-desk-page");
 		this.deposit = null;
@@ -28,30 +29,33 @@ class HalaDepositPage {
 	}
 
 	render_shell() {
-		this.page.main.html(`
-			<div class="hala-deposit-shell" dir="rtl">
-				<section class="hala-deposit-card hala-deposit-heading">
+		this.$shell = window.halaCashierLayout.mount({
+			page: this.page,
+			active: "deposit",
+			page_class: "hala-deposit-shell",
+			content: `
+				<section class="hala-deposit-card hala-deposit-heading hala-cashier-card hala-cashier-heading">
 					<div>
-						<span class="hala-deposit-kicker">Hala</span>
+						<span class="hala-deposit-kicker hala-cashier-kicker">Hala</span>
 						<h2>${__("Receive Deposit")}</h2>
 						<p data-deposit-name>${__("New Deposit")}</p>
 					</div>
-					<div class="hala-deposit-actions" data-deposit-actions></div>
+					<div class="hala-deposit-actions hala-cashier-actions" data-deposit-actions></div>
 				</section>
 
-				<section class="hala-deposit-card">
+				<section class="hala-deposit-card hala-cashier-card">
 					<div class="hala-deposit-fields">
 						<div data-field="customer"></div>
 						<div data-field="item_code"></div>
-						<div data-field="description"></div>
 						<div data-field="qty"></div>
 						<div data-field="amount"></div>
+						<div data-field="description"></div>
 					</div>
 					<div class="hala-deposit-summary" data-deposit-summary></div>
 				</section>
 
-				<section class="hala-deposit-card">
-					<div class="hala-deposit-section-heading">
+				<section class="hala-deposit-card hala-cashier-card">
+					<div class="hala-deposit-section-heading hala-cashier-section-heading">
 						<div>
 							<h3>${__("Open Deposits")}</h3>
 							<p>${__("Select a deposit receipt to view or refund it.")}</p>
@@ -76,9 +80,8 @@ class HalaDepositPage {
 						</table>
 					</div>
 				</section>
-			</div>
-		`);
-		this.$shell = this.page.main.find(".hala-deposit-shell");
+			`,
+		});
 		this.$actions = this.$shell.find("[data-deposit-actions]");
 		this.$summary = this.$shell.find("[data-deposit-summary]");
 		this.$deposits = this.$shell.find("[data-open-deposits]");
@@ -92,6 +95,7 @@ class HalaDepositPage {
 				fieldtype: "Link",
 				label: __("Deposit Item"),
 				options: "Item",
+				reqd: 0,
 				get_query: () => ({filters: {disabled: 0}}),
 			},
 			description: {fieldtype: "Small Text", label: __("Description")},

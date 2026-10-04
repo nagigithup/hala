@@ -45,6 +45,14 @@ class TestHalaBooking(IntegrationTestCase):
 
 		self.assertEqual(_get_default_sales_invoice_print_format(), "Standard")
 
+	def test_booking_print_format_includes_item_description(self):
+		html = frappe.db.get_value("Print Format", "BOOKING", "html") or ""
+
+		self.assertIn("frappe.utils.strip_html(item.description or '')", html)
+		self.assertIn("{% if item_description %}", html)
+		self.assertIn("{{ item_description }}", html)
+		self.assertIn("item-description", html)
+
 	def test_booking_payment_caps_overpayment_as_customer_change(self):
 		payment = _calculate_booking_payment(50, 46)
 
@@ -199,13 +207,26 @@ class TestHalaBooking(IntegrationTestCase):
 				"net_total": 900,
 				"total_taxes_and_charges": 100,
 				"grand_total": 1000,
-				"items": [],
+				"items": [
+					frappe._dict(
+						{
+							"item_code": "ITEM-1",
+							"item_name": "Test Item",
+							"description": "وصف خاص بالحجز",
+							"qty": 1,
+							"uom": "Nos",
+							"rate": 1000,
+							"amount": 1000,
+						}
+					)
+				],
 			}
 		)
 		result = _summary(doc)
 		self.assertEqual(result["paid_amount"], 500)
 		self.assertEqual(result["remaining_amount"], 500)
 		self.assertEqual(result["notes"], "Call before delivery")
+		self.assertEqual(result["items"][0]["description"], "وصف خاص بالحجز")
 
 	@patch("erpnext.accounts.utils.reconcile_against_document")
 	@patch("hala.api.booking.frappe.get_cached_value", return_value="Exchange Gain/Loss")

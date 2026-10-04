@@ -16,6 +16,7 @@ class HalaBookingPage {
 			parent: wrapper,
 			title: __("Booking Invoice"),
 			single_column: true,
+			hide_sidebar: true,
 		});
 		this.page.main.addClass("hala-booking-desk-page");
 		this.booking = null;
@@ -31,18 +32,21 @@ class HalaBookingPage {
 	}
 
 	render_shell() {
-		this.page.main.html(`
-			<div class="hala-booking-shell" dir="rtl">
-				<section class="hala-booking-card hala-booking-heading">
+		this.$shell = window.halaCashierLayout.mount({
+			page: this.page,
+			active: "booking",
+			page_class: "hala-booking-shell",
+			content: `
+				<section class="hala-booking-card hala-booking-heading hala-cashier-card hala-cashier-heading">
 					<div>
-						<span class="hala-booking-kicker">Hala</span>
+						<span class="hala-booking-kicker hala-cashier-kicker">Hala</span>
 						<h2 data-booking-title>${__("Booking Invoice")}</h2>
 						<p data-booking-name>${__("New Booking")}</p>
 					</div>
-					<div class="hala-booking-actions" data-booking-actions></div>
+					<div class="hala-booking-actions hala-cashier-actions" data-booking-actions></div>
 				</section>
 
-				<section class="hala-booking-card">
+				<section class="hala-booking-card hala-cashier-card">
 					<div class="hala-booking-fields">
 						<div data-field="customer"></div>
 						<div data-field="posting_date"></div>
@@ -51,8 +55,8 @@ class HalaBookingPage {
 					</div>
 				</section>
 
-				<section class="hala-booking-card">
-					<div class="hala-booking-section-heading">
+				<section class="hala-booking-card hala-cashier-card">
+					<div class="hala-booking-section-heading hala-cashier-section-heading">
 						<h3>${__("Items")}</h3>
 						<button class="btn btn-sm btn-default" data-action="add-item">
 							${frappe.utils.icon("plus", "sm")} ${__("Add Item")}
@@ -63,6 +67,7 @@ class HalaBookingPage {
 							<thead><tr>
 								<th>${__("Item Code")}</th>
 								<th>${__("Item Name")}</th>
+								<th>${__("Description")}</th>
 								<th>${__("UOM")}</th>
 								<th>${__("Qty")}</th>
 								<th>${__("Rate")}</th>
@@ -75,10 +80,10 @@ class HalaBookingPage {
 				</section>
 
 				<div class="hala-booking-summary">
-					<section class="hala-booking-card hala-booking-notes-card">
+					<section class="hala-booking-card hala-booking-notes-card hala-cashier-card">
 						<div data-field="notes"></div>
 					</section>
-					<section class="hala-booking-totals">
+					<section class="hala-booking-totals hala-cashier-totals">
 						<div><span>${__("Subtotal")}</span><strong data-total="net_total">0</strong></div>
 						<div><span>${__("Tax")}</span><strong data-total="tax">0</strong></div>
 						<div class="grand"><span>${__("Grand Total")}</span><strong data-total="grand_total">0</strong></div>
@@ -87,8 +92,8 @@ class HalaBookingPage {
 					</section>
 				</div>
 
-				<section class="hala-booking-card hala-open-bookings">
-					<div class="hala-booking-section-heading">
+				<section class="hala-booking-card hala-open-bookings hala-cashier-card">
+					<div class="hala-booking-section-heading hala-cashier-section-heading">
 						<div><h3>${__("Open Bookings")}</h3><p>${__("Select a booking to continue working on it.")}</p></div>
 						<div class="hala-open-bookings-tools">
 							<div class="hala-open-bookings-search">
@@ -117,9 +122,8 @@ class HalaBookingPage {
 						</table>
 					</div>
 				</section>
-			</div>
-		`);
-		this.$shell = this.page.main.find(".hala-booking-shell");
+			`,
+		});
 		this.$items = this.$shell.find("[data-booking-items]");
 		this.$actions = this.$shell.find("[data-booking-actions]");
 		this.$open_bookings = this.$shell.find("[data-open-bookings]");
@@ -282,6 +286,7 @@ class HalaBookingPage {
 		const draft = !this.booking || Number(this.booking.docstatus) === 0;
 		const row = {
 			item_name: item.item_name || "",
+			description: item.description || "",
 			uom: item.uom || "",
 			rate: flt(item.rate),
 			amount: flt(item.amount),
@@ -291,6 +296,7 @@ class HalaBookingPage {
 		row.$row = $(`<tr>
 			<td data-control="item_code"></td>
 			<td class="hala-booking-item-name" data-value="item_name">—</td>
+			<td class="hala-booking-description" data-control="description"></td>
 			<td class="hala-booking-item-uom" data-value="uom">—</td>
 			<td data-control="qty"></td>
 			<td class="hala-booking-money" data-value="rate"></td>
@@ -301,7 +307,12 @@ class HalaBookingPage {
 			parent: row.$row.find('[data-control="item_code"]'),
 			df: {fieldtype: "Link", options: "Item", fieldname: "item_code", read_only: draft ? 0 : 1,
 				get_query: () => ({filters: {disabled: 0}}),
-				change: () => !row.initializing && this.refresh_item(row)},
+				change: () => !row.initializing && this.refresh_item(row, true)},
+			render_input: true,
+		});
+		row.description = frappe.ui.form.make_control({
+			parent: row.$row.find('[data-control="description"]'),
+			df: {fieldtype: "Small Text", fieldname: "description", read_only: draft ? 0 : 1},
 			render_input: true,
 		});
 		row.qty = frappe.ui.form.make_control({
@@ -311,6 +322,7 @@ class HalaBookingPage {
 		});
 		Promise.all([
 			row.item_code.set_value(item.item_code || ""),
+			row.description.set_value(item.description || ""),
 			row.qty.set_value(item.qty || 1),
 		]).finally(() => {
 			row.initializing = false;
@@ -325,12 +337,13 @@ class HalaBookingPage {
 		this.render_row_values(row);
 	}
 
-	async refresh_item(row) {
+	async refresh_item(row, refresh_description = false) {
 		const refresh_token = ++row.refresh_token;
 		const item_code = row.item_code.get_value();
 		const qty = flt(row.qty.get_value());
 		if (!item_code || qty <= 0) {
 			row.item_name = "";
+			if (refresh_description && !item_code) await row.description.set_value("");
 			row.rate = 0;
 			row.amount = 0;
 			this.render_row_values(row);
@@ -345,6 +358,7 @@ class HalaBookingPage {
 		});
 		if (refresh_token !== row.refresh_token) return;
 		row.item_name = details.item_name || details.item_code || item_code;
+		if (refresh_description) await row.description.set_value(details.description || "");
 		row.uom = details.uom;
 		row.rate = flt(details.rate);
 		row.amount = row.rate * qty;
@@ -389,7 +403,12 @@ class HalaBookingPage {
 			booking_status: this.controls.booking_status.get_value(),
 			notes: this.controls.notes.get_value(),
 			items: this.rows
-				.map((row) => ({item_code: row.item_code.get_value(), qty: flt(row.qty.get_value()), uom: row.uom}))
+				.map((row) => ({
+					item_code: row.item_code.get_value(),
+					description: row.description.get_value(),
+					qty: flt(row.qty.get_value()),
+					uom: row.uom,
+				}))
 				.filter((row) => row.item_code),
 		};
 	}
