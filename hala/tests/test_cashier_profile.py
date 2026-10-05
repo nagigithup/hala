@@ -128,7 +128,7 @@ class TestCashierProfileIsolation(IntegrationTestCase):
 		doc = frappe._dict(
 			doctype="Sales Invoice", pos_profile="Any Profile", owner="someone@example.com"
 		)
-		self.assertIsNone(
+		self.assertTrue(
 			has_transaction_permission(doc, user="manager@example.com", permission_type="read")
 		)
 		self.assertIsNone(payment_entry_query_conditions("manager@example.com"))

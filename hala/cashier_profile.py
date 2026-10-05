@@ -148,7 +148,10 @@ def has_transaction_permission(doc, user=None, permission_type=None):
 	"""Frappe has_permission hook for cashier-facing transaction documents."""
 	user = user or frappe.session.user
 	if not is_cashier_isolation_user(user):
-		return None
+		# Frappe permission hooks may only deny access: returning None is treated
+		# as a controller-level denial.  Elevated/non-cashier users must return
+		# True so the normal role permission system can continue its checks.
+		return True
 	if permission_type == "create":
 		return bool(get_current_cashier_profile(user=user, required=False))
 	profile = get_document_cashier_profile(doc)
