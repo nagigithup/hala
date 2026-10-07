@@ -9,5 +9,7 @@ class CustomerPricingPOSPage(TemplatePage):
 
 	def get_html(self):
 		html = super().get_html()
-		script = '<script defer src="/assets/hala/js/pos_customer_prices.js?v=2"></script>'
+		# Bump the query version when changing this standalone script so cashier
+		# browsers do not keep the pre-single-flight implementation after deploy.
+		script = '<script defer src="/assets/hala/js/pos_customer_prices.js?v=3"></script>'
 		return html.replace("</head>", f"{script}</head>", 1)

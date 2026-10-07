@@ -72,6 +72,38 @@ def get_effective_price_list(customer=None, pos_profile=None):
 	}
 
 
+def _build_pricing_context(customer=None, pos_profile=None, transaction_date=None):
+	"""Resolve batch-wide pricing inputs once without changing ERPNext's item logic."""
+	pos_profile = _normalise_pos_profile(pos_profile)
+	if not pos_profile:
+		frappe.throw(_("POS Profile is required"))
+
+	profile = frappe.get_cached_doc("POS Profile", pos_profile)
+	price_list = resolve_effective_price_list(customer=customer, pos_profile=pos_profile)
+	posting_date = transaction_date or nowdate()
+	return frappe._dict(
+		{
+			"customer": customer,
+			"pos_profile": pos_profile,
+			"profile": profile,
+			"price_list": price_list,
+			"posting_date": posting_date,
+			"doc": frappe._dict(
+				{
+					"doctype": "Sales Invoice",
+					"company": profile.company,
+					"customer": customer,
+					"selling_price_list": price_list,
+					"posting_date": posting_date,
+					"transaction_date": posting_date,
+					"is_pos": 1,
+					"pos_profile": pos_profile,
+				}
+			),
+		}
+	)
+
+
 def _get_customer_item_details(
 	item_code,
 	pos_profile,
@@ -79,34 +111,22 @@ def _get_customer_item_details(
 	qty=1,
 	uom=None,
 	transaction_date=None,
+	pricing_context=None,
 ):
 	from pos_next.api.items import get_item_detail
 
-	pos_profile = _normalise_pos_profile(pos_profile)
-	if not pos_profile:
-		frappe.throw(_("POS Profile is required"))
-
-	profile = frappe.get_cached_doc("POS Profile", pos_profile)
+	context = pricing_context or _build_pricing_context(
+		customer=customer,
+		pos_profile=pos_profile,
+		transaction_date=transaction_date,
+	)
+	pos_profile = context.pos_profile
+	profile = context.profile
 	item_doc = frappe.get_cached_doc("Item", item_code)
 	if not item_doc.is_sales_item:
 		frappe.throw(_("Item {0} is not allowed for sales").format(item_code))
 
-	effective_price_list = resolve_effective_price_list(
-		customer=customer, pos_profile=pos_profile
-	)
-	posting_date = transaction_date or nowdate()
-	doc = frappe._dict(
-		{
-			"doctype": "Sales Invoice",
-			"company": profile.company,
-			"customer": customer,
-			"selling_price_list": effective_price_list,
-			"posting_date": posting_date,
-			"transaction_date": posting_date,
-			"is_pos": 1,
-			"pos_profile": pos_profile,
-		}
-	)
+	effective_price_list = context.price_list
 	item = {
 		"item_code": item_code,
 		"has_batch_no": item_doc.has_batch_no,
@@ -121,7 +141,9 @@ def _get_customer_item_details(
 
 	details = get_item_detail(
 		item=item,
-		doc=doc,
+		# POS Next enriches the invoice context with currency fields. Keep a fresh
+		# object per item so one calculation cannot leak mutable state into another.
+		doc=frappe._dict(context.doc.copy()),
 		warehouse=profile.warehouse,
 		price_list=effective_price_list,
 		company=profile.company,
@@ -156,7 +178,7 @@ def get_item_details(
 
 
 @frappe.whitelist()
-def get_catalog_prices(customer=None, pos_profile=None, items=None):
+def get_catalog_prices(customer=None, pos_profile=None, items=None, transaction_date=None):
 	"""Return the effective list and display prices for visible POS items."""
 	if frappe.session.user == "Guest":
 		frappe.throw(_("Please log in to use the POS"), frappe.PermissionError)
@@ -165,23 +187,63 @@ def get_catalog_prices(customer=None, pos_profile=None, items=None):
 	if not isinstance(items, list) or len(items) > 100:
 		frappe.throw(_("Up to 100 items can be priced at once"), frappe.ValidationError)
 
-	price_list = resolve_effective_price_list(customer=customer, pos_profile=pos_profile)
-	prices = {}
+	# Validate and deduplicate before entering the expensive ERPNext pricing path.
+	# Quantity is part of the key because Pricing Rules may use quantity slabs.
+	normalized_items = []
+	unique_items = {}
 	for item in items:
 		if not isinstance(item, dict) or not item.get("item_code"):
 			frappe.throw(_("An item code is required"), frappe.ValidationError)
 		item_code = item["item_code"]
-		details = _get_customer_item_details(
-			item_code=item_code,
-			pos_profile=pos_profile,
-			customer=customer,
-			uom=item.get("uom"),
+		uom = item.get("uom") or ""
+		qty = flt(item.get("qty") or 1)
+		pricing_key = (item_code, uom, qty)
+		normalized_items.append((item, pricing_key))
+		unique_items.setdefault(
+			pricing_key,
+			{"item_code": item_code, "uom": uom or None, "qty": qty},
 		)
-		prices[item_code] = {
+
+	context = _build_pricing_context(
+		customer=customer,
+		pos_profile=pos_profile,
+		transaction_date=transaction_date,
+	)
+	price_list = context.price_list
+	calculated_prices = {}
+	for pricing_key, item in unique_items.items():
+		details = _get_customer_item_details(
+			item_code=item["item_code"],
+			pos_profile=context.pos_profile,
+			customer=customer,
+			qty=item["qty"],
+			uom=item["uom"],
+			transaction_date=context.posting_date,
+			pricing_context=context,
+		)
+		calculated_prices[pricing_key] = {
 			"rate": flt(details.get("price_list_rate") or details.get("rate") or 0),
-			"uom": details.get("uom") or item.get("uom"),
+			"uom": details.get("uom") or item["uom"],
 		}
-	return {"price_list": price_list, "prices": prices}
+
+	# Keep the existing item-code map unchanged for old clients. The request-key
+	# map lets the new client distinguish the same item requested with another UOM
+	# or quantity without changing the public response contract.
+	prices = {}
+	prices_by_request = {}
+	for item, pricing_key in normalized_items:
+		price = calculated_prices[pricing_key]
+		prices[item["item_code"]] = price
+		request_key = item.get("request_key")
+		if isinstance(request_key, str) and request_key:
+			prices_by_request[request_key] = price
+
+	return {
+		"price_list": price_list,
+		"pricing_date": context.posting_date,
+		"prices": prices,
+		"prices_by_request": prices_by_request,
+	}
 
 
 def _validate_submitted_price_list_rates(data, effective_price_list):

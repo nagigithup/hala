@@ -55,7 +55,16 @@ class TestPOSCustomerPriceList(IntegrationTestCase):
 
 	def test_catalog_returns_customer_prices(self):
 		with (
-			patch("hala.api.pos_pricing.resolve_effective_price_list", return_value="Customer List"),
+			patch(
+				"hala.api.pos_pricing._build_pricing_context",
+				return_value=frappe._dict(
+					{
+						"price_list": "Customer List",
+						"pos_profile": "Test POS",
+						"posting_date": "2026-10-07",
+					}
+				),
+			),
 			patch(
 				"hala.api.pos_pricing._get_customer_item_details",
 				return_value={"price_list_rate": 100, "uom": "Kg"},
@@ -66,6 +75,65 @@ class TestPOSCustomerPriceList(IntegrationTestCase):
 			)
 		self.assertEqual(result["price_list"], "Customer List")
 		self.assertEqual(result["prices"]["ITEM-1"]["rate"], 100)
+
+	def test_catalog_deduplicates_same_pricing_context(self):
+		context = frappe._dict(
+			{
+				"price_list": "Customer List",
+				"pos_profile": "Test POS",
+				"posting_date": "2026-10-07",
+			}
+		)
+		items = [
+			{"item_code": "ITEM-1", "uom": "Kg", "qty": 2, "request_key": "first"},
+			{"item_code": "ITEM-1", "uom": "Kg", "qty": 2, "request_key": "duplicate"},
+		]
+		with (
+			patch("hala.api.pos_pricing._build_pricing_context", return_value=context),
+			patch(
+				"hala.api.pos_pricing._get_customer_item_details",
+				return_value={"price_list_rate": 75, "uom": "Kg"},
+			) as get_details,
+		):
+			result = get_catalog_prices(
+				customer="Customer", pos_profile="Test POS", items=items, transaction_date="2026-10-07"
+			)
+
+		get_details.assert_called_once()
+		self.assertEqual(result["prices"]["ITEM-1"]["rate"], 75)
+		self.assertEqual(result["prices_by_request"]["first"], result["prices"]["ITEM-1"])
+		self.assertEqual(result["prices_by_request"]["duplicate"], result["prices"]["ITEM-1"])
+
+	def test_catalog_keeps_uom_and_quantity_pricing_contexts_distinct(self):
+		context = frappe._dict(
+			{
+				"price_list": "Customer List",
+				"pos_profile": "Test POS",
+				"posting_date": "2026-10-07",
+			}
+		)
+
+		def details(**kwargs):
+			return {"price_list_rate": kwargs["qty"] * (10 if kwargs["uom"] == "Kg" else 20), "uom": kwargs["uom"]}
+
+		with (
+			patch("hala.api.pos_pricing._build_pricing_context", return_value=context),
+			patch("hala.api.pos_pricing._get_customer_item_details", side_effect=details) as get_details,
+		):
+			result = get_catalog_prices(
+				customer="Customer",
+				pos_profile="Test POS",
+				items=[
+					{"item_code": "ITEM-1", "uom": "Kg", "qty": 1, "request_key": "kg-one"},
+					{"item_code": "ITEM-1", "uom": "Kg", "qty": 3, "request_key": "kg-three"},
+					{"item_code": "ITEM-1", "uom": "Box", "qty": 1, "request_key": "box-one"},
+				],
+			)
+
+		self.assertEqual(get_details.call_count, 3)
+		self.assertEqual(result["prices_by_request"]["kg-one"]["rate"], 10)
+		self.assertEqual(result["prices_by_request"]["kg-three"]["rate"], 30)
+		self.assertEqual(result["prices_by_request"]["box-one"]["rate"], 20)
 
 	def test_customer_switching_resolves_a_b_a_without_cached_result(self):
 		customer_lists = {"Customer A": "Retail", "Customer B": "Wholesale"}
