@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import frappe
-from frappe.boot import get_sidebar_items
+from frappe.desk.doctype.sidebar.sidebar import resolve_sidebar
 from frappe.tests import IntegrationTestCase
 
 from hala import hooks
@@ -116,7 +116,9 @@ class TestHalaWorkspace(IntegrationTestCase):
 		try:
 			frappe.set_user(user_email)
 			frappe.clear_cache(user=user_email)
-			items = get_sidebar_items(["Hala"])["hala"]["items"]
+			sidebar = resolve_sidebar("Hala", user_email)
+			self.assertIsNotNone(sidebar)
+			items = sidebar.items
 			visible_targets = {item["link_to"] for item in items if item["type"] == "Link"}
 			self.assertIn("Hala", visible_targets)
 			self.assertNotIn("Item", visible_targets)

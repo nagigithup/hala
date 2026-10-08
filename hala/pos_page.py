@@ -16,7 +16,7 @@ class CustomerPricingPOSPage(TemplatePage):
 		# The site-rendered date avoids using the cashier computer's timezone. The
 		# refresh delay schedules an authoritative check just after site midnight.
 		script = (
-			'<script defer src="/assets/hala/js/pos_customer_prices.js?v=5" '
+			'<script defer src="/assets/hala/js/pos_customer_prices.js?v=6" '
 			f'data-pricing-date="{date_context["pricing_date"]}" '
 			f'data-date-refresh-ms="{date_context["date_refresh_ms"]}"></script>'
 		)

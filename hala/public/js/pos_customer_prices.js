@@ -16,9 +16,9 @@
 	let pricingDateTimer;
 	let syncInFlight = null;
 	let resyncRequested = false;
-	let applyingPrices = false;
 	let generation = 0;
 	let lastSelection = "";
+	let lastPricingInputSignature = "";
 	let authoritativePricingDate = scriptElement?.dataset.pricingDate || "";
 	const cachedPrices = new Map();
 	const pendingPrices = new Map();
@@ -151,22 +151,37 @@
 		};
 	}
 
-	function schedule(stores) {
-		if (applyingPrices) return;
-		if (manualRefreshActive) {
-			resyncRequested = true;
-			return;
-		}
-		// Advance the generation immediately. A customer/profile change while a
-		// request is in flight must make that response stale before it can touch UI.
-		updateGeneration(stores);
-		resyncRequested = true;
-		if (syncInFlight) return;
+	function queueSync(stores) {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			timer = null;
 			startSync(stores).catch(console.error);
 		}, DEBOUNCE_MS);
+	}
+
+	function getPricingInputSignature(stores) {
+		const context = updateGeneration(stores);
+		const { entries } = getRelevantEntries(stores, context);
+		return JSON.stringify([
+			context.selection,
+			uniqueValidEntries(entries).map((entry) => entry.key),
+		]);
+	}
+
+	function schedule(stores) {
+		// Pinia subscriptions include pricing-output mutations. Compare only the
+		// server pricing inputs so rate/token updates, dialogs, renders, and cache
+		// eviction can never enqueue another cycle by themselves.
+		const signature = getPricingInputSignature(stores);
+		if (signature === lastPricingInputSignature) return;
+		lastPricingInputSignature = signature;
+		if (manualRefreshActive) {
+			resyncRequested = true;
+			return;
+		}
+		resyncRequested = true;
+		if (syncInFlight) return;
+		queueSync(stores);
 	}
 
 	async function startSync(stores) {
@@ -183,7 +198,7 @@
 			syncInFlight = null;
 			// Mutations during the request are coalesced into one debounced follow-up.
 			// Cached/pending keys ensure the follow-up only requests genuinely new work.
-			if (resyncRequested) schedule(stores);
+			if (resyncRequested) queueSync(stores);
 		}
 	}
 
@@ -355,7 +370,10 @@
 		const pending = pendingPrices.get(entry.key);
 		if (pending) {
 			const data = await pending.request;
-			if (expectedGeneration !== generation || context.selection !== lastSelection)
+			if (
+				expectedGeneration !== generation ||
+				context.selection !== lastSelection
+			)
 				return null;
 			return (
 				getCachedEntry(entry.key)?.price ||
@@ -363,21 +381,43 @@
 			);
 		}
 		const data = await fetchAndCache(context, [entry], expectedGeneration);
-		if (expectedGeneration !== generation || context.selection !== lastSelection)
+		if (
+			expectedGeneration !== generation ||
+			context.selection !== lastSelection
+		)
 			return null;
 		return getCachedEntry(entry.key)?.price || getResponsePrice(data, entry, 0);
 	}
 
-	function getVisibleEntries(stores, context, includeCompatibilityCart = true) {
+	function getRelevantCatalogRows(items) {
+		const pageSize = Math.max(1, Number(items.itemsPerPage) || 100);
+		const searching = Boolean(String(items.searchTerm || "").trim());
+		const filteredRows = Array.isArray(items.filteredItems)
+			? items.filteredItems
+			: null;
+		const rows = searching
+			? Array.isArray(items.searchResults)
+				? items.searchResults
+				: filteredRows || []
+			: filteredRows || items.allItems || [];
+		// Current POS Next exposes only the server-paginated rows through
+		// filteredItems. The slice is a compatibility safety net for older builds
+		// whose allItems array may contain the complete catalog.
+		return rows.slice(0, pageSize);
+	}
+
+	function getRelevantEntries(
+		stores,
+		context,
+		includeCompatibilityCart = true,
+	) {
 		const { cart, items } = stores;
 		const hasNativeCustomerPricing = "effectivePriceList" in cart;
+		const catalogRows = getRelevantCatalogRows(items);
 		return {
 			hasNativeCustomerPricing,
 			entries: [
-				...(items.allItems || []).map((item) => makeEntry(item, context, false)),
-				...(items.searchResults || []).map((item) =>
-					makeEntry(item, context, false),
-				),
+				...catalogRows.map((item) => makeEntry(item, context, false)),
 				...(includeCompatibilityCart && !hasNativeCustomerPricing
 					? (cart.invoiceItems || []).map((item) =>
 							makeEntry(item, context, true),
@@ -408,6 +448,11 @@
 	function applyPrices(stores, context, preparedPrices = null) {
 		const { cart, items } = stores;
 		const hasNativeCustomerPricing = "effectivePriceList" in cart;
+		const relevantKeys = new Set(
+			getRelevantEntries(stores, context, false).entries.map(
+				(entry) => entry.key,
+			),
+		);
 		const findPrice = (entry) =>
 			preparedPrices?.get(entry.key) || getCachedEntry(entry.key);
 
@@ -415,6 +460,7 @@
 			let changed = false;
 			const result = rows.map((item) => {
 				const entry = makeEntry(item, context, false);
+				if (!relevantKeys.has(entry.key)) return item;
 				const cached = findPrice(entry);
 				if (!cached || item.__hala_price_cache_token === cached.token)
 					return item;
@@ -432,40 +478,34 @@
 			return changed ? result : null;
 		}
 
-		applyingPrices = true;
-		try {
-			const allItems = priceRows(items.allItems || []);
-			const searchResults = priceRows(items.searchResults || []);
-			if (allItems || searchResults) {
-				items.invalidateCache();
-				if (allItems) items.allItems = allItems;
-				if (searchResults) items.searchResults = searchResults;
-			}
+		const allItems = priceRows(items.allItems || []);
+		const searchResults = priceRows(items.searchResults || []);
+		if (allItems || searchResults) {
+			items.invalidateCache();
+			if (allItems) items.allItems = allItems;
+			if (searchResults) items.searchResults = searchResults;
+		}
 
-			if (!hasNativeCustomerPricing) {
-				let cartChanged = false;
-				for (const item of cart.invoiceItems || []) {
-					if (item.is_free_item) continue;
-					const entry = makeEntry(item, context, true);
-					const cached = findPrice(entry);
-					if (!cached || item.__hala_price_cache_token === cached.token)
-						continue;
-					const price = cached.price;
-					item.rate = price.rate;
-					item.price_list_rate = price.rate;
-					item.discount_percentage = 0;
-					item.discount_amount = 0;
-					item.is_rate_manually_edited = 0;
-					item.original_rate = null;
-					item.__hala_price_key = entry.key;
-					item.__hala_price_cache_token = cached.token;
-					cart.recalculateItem(item);
-					cartChanged = true;
-				}
-				if (cartChanged) cart.rebuildIncrementalCache();
+		if (!hasNativeCustomerPricing) {
+			let cartChanged = false;
+			for (const item of cart.invoiceItems || []) {
+				if (item.is_free_item) continue;
+				const entry = makeEntry(item, context, true);
+				const cached = findPrice(entry);
+				if (!cached || item.__hala_price_cache_token === cached.token) continue;
+				const price = cached.price;
+				item.rate = price.rate;
+				item.price_list_rate = price.rate;
+				item.discount_percentage = 0;
+				item.discount_amount = 0;
+				item.is_rate_manually_edited = 0;
+				item.original_rate = null;
+				item.__hala_price_key = entry.key;
+				item.__hala_price_cache_token = cached.token;
+				cart.recalculateItem(item);
+				cartChanged = true;
 			}
-		} finally {
-			applyingPrices = false;
+			if (cartChanged) cart.rebuildIncrementalCache();
 		}
 	}
 
@@ -477,15 +517,15 @@
 		// Current POS Next prices cart lines itself with quantity/pricing-rule context.
 		// The injected script only needs to price catalog/search rows there. Older
 		// builds still use the compatibility cart path below.
-		const { entries: visibleEntries } = getVisibleEntries(stores, context);
+		const { entries: relevantEntries } = getRelevantEntries(stores, context);
 		const missing = new Map();
-		for (const entry of visibleEntries) {
+		for (const entry of relevantEntries) {
 			if (!entry.item?.item_code) continue;
 			if (!getCachedEntry(entry.key) && !pendingPrices.has(entry.key)) {
 				missing.set(entry.key, entry);
 			}
 		}
-		if (!visibleEntries.length) return;
+		if (!relevantEntries.length) return;
 
 		const requested = [...missing.values()];
 		for (let offset = 0; offset < requested.length; offset += BATCH_SIZE) {
@@ -511,7 +551,7 @@
 		manualRefreshPromise = null;
 		const syncAfterFinish = shouldResync || resyncRequested;
 		resyncRequested = false;
-		if (syncAfterFinish) schedule(stores);
+		if (syncAfterFinish) queueSync(stores);
 	}
 
 	async function buildManualRefreshTransaction(stores, attempt = 0) {
@@ -528,7 +568,7 @@
 		const expectedGeneration = generation;
 		const originalAllItems = stores.items.allItems;
 		const originalSearchResults = stores.items.searchResults;
-		const { entries } = getVisibleEntries(stores, context, false);
+		const { entries } = getRelevantEntries(stores, context, false);
 		const prepared = [];
 		const requested = uniqueValidEntries(entries);
 		const visibleSignature = getVisibleShape(entries);
@@ -582,13 +622,11 @@
 				current.customer === context.customer &&
 				current.transactionDate === context.transactionDate &&
 				visibleSignature ===
-					getVisibleShape(getVisibleEntries(stores, current, false).entries)
+					getVisibleShape(getRelevantEntries(stores, current, false).entries)
 			);
 		};
 		const isCurrent = () =>
-			!finished &&
-			expectedGeneration === generation &&
-			hasCurrentBaseContext();
+			!finished && expectedGeneration === generation && hasCurrentBaseContext();
 		return {
 			priceList: resolvedPriceList,
 			isCurrent,
@@ -597,8 +635,7 @@
 				const current = getContext(stores);
 				const commitContext = {
 					...context,
-					effectivePriceList:
-						resolvedPriceList || current.effectivePriceList,
+					effectivePriceList: resolvedPriceList || current.effectivePriceList,
 				};
 				commitContext.selection = getContextSelection(commitContext);
 				lastSelection = commitContext.selection;
@@ -627,16 +664,11 @@
 			rollback() {
 				if (!committed) return;
 				cachedPrices.clear();
-				applyingPrices = true;
-				try {
-					stores.items.invalidateCache();
-					stores.items.allItems = originalAllItems;
-					stores.items.searchResults = originalSearchResults;
-					lastSelection = getContext(stores).selection;
-				} finally {
-					applyingPrices = false;
-					committed = false;
-				}
+				stores.items.invalidateCache();
+				stores.items.allItems = originalAllItems;
+				stores.items.searchResults = originalSearchResults;
+				lastSelection = getContext(stores).selection;
+				committed = false;
 			},
 		};
 	}
@@ -669,11 +701,7 @@
 			const context = updateGeneration(stores);
 			const expectedGeneration = generation;
 			const entry = makeEntry({ ...item, qty }, context, true);
-			const price = await getOrFetchPrice(
-				context,
-				entry,
-				expectedGeneration,
-			);
+			const price = await getOrFetchPrice(context, entry, expectedGeneration);
 			const pricedItem = price
 				? { ...item, rate: price.rate, price_list_rate: price.rate }
 				: item;
@@ -693,10 +721,7 @@
 		globalThis.halaPOSPricing = {
 			prepareRefresh: () => prepareManualRefresh(stores),
 		};
-		schedulePricingDateRefresh(
-			stores,
-			scriptElement?.dataset.dateRefreshMs,
-		);
+		schedulePricingDateRefresh(stores, scriptElement?.dataset.dateRefreshMs);
 		schedule(stores);
 	}
 

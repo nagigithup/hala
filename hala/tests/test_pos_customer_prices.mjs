@@ -57,8 +57,11 @@ async function flushPromises(rounds = 12) {
 
 function createHarness({
 	itemCount = 1,
+	visibleCount = Math.min(itemCount, 100),
+	itemsPerPage = 100,
 	duplicateRows = false,
 	cartItems = [],
+	nativeCustomerPricing = true,
 	transportIgnoresAbort = false,
 } = {}) {
 	const timers = createTimers();
@@ -74,15 +77,24 @@ function createHarness({
 		posProfile: "Test POS",
 		customer: { name: "Customer A" },
 		invoiceItems: cartItems,
-		effectivePriceList: null,
+		async addItem(item, qty) {
+			this.invoiceItems.push({ ...item, quantity: qty });
+			return item;
+		},
+		recalculateItem() {},
+		rebuildIncrementalCache() {},
 		$subscribe(callback) {
 			subscribers.cart = callback;
 		},
 	};
+	if (nativeCustomerPricing) cart.effectivePriceList = null;
 	const items = {
 		posProfile: "Test POS",
 		allItems: catalogItems,
+		filteredItems: catalogItems.slice(0, visibleCount),
 		searchResults: duplicateRows ? [...catalogItems] : [],
+		searchTerm: "",
+		itemsPerPage,
 		invalidateCache() {},
 		$subscribe(callback) {
 			subscribers.items = callback;
@@ -255,6 +267,10 @@ function createHarness({
 		setServerPricingDate(date) {
 			serverPricingDate = date;
 		},
+		setVisibleRange(start, count = visibleCount) {
+			items.filteredItems = items.allItems.slice(start, start + count);
+			subscribers.items();
+		},
 		get maxConcurrent() {
 			return maxConcurrent;
 		},
@@ -319,21 +335,143 @@ test("the same pricing key repeated across stores is fetched once", async () => 
 	assert.ok(harness.items.allItems.every((item) => item.rate === 55));
 });
 
-test("a failed request clears pending state and a later mutation retries", async () => {
-	const harness = createHarness();
+test("pricing-output store mutations and ten minutes idle create zero requests", async () => {
+	const harness = createHarness({ itemCount: 25, visibleCount: 25 });
+	harness.timers.advance(81);
+	await flushPromises();
+	harness.requests[0].resolve();
+	await flushPromises();
+
+	for (let mutation = 0; mutation < 100; mutation++) {
+		harness.subscribers.items();
+		harness.subscribers.cart();
+	}
+	harness.timers.advance(10 * 60 * 1000);
+	await flushPromises();
+	assert.equal(harness.requests.length, 1);
+});
+
+test("only newly visible catalog rows are priced in a large catalog", async () => {
+	const harness = createHarness({ itemCount: 1_074, visibleCount: 25 });
+	harness.timers.advance(81);
+	await flushPromises();
+	assert.equal(harness.requests.length, 1);
+	assert.equal(harness.requests[0].items.length, 25);
+	harness.requests[0].resolve();
+	await flushPromises();
+
+	harness.setVisibleRange(25, 25);
+	harness.timers.advance(81);
+	await flushPromises();
+	assert.equal(harness.requests.length, 2);
+	assert.deepEqual(
+		harness.requests[1].items.map((item) => item.item_code),
+		harness.items.allItems.slice(25, 50).map((item) => item.item_code),
+	);
+	harness.requests[1].resolve();
+	await flushPromises();
+	assert.equal(harness.requests.length, 2);
+});
+
+test("barcode-selected items outside the visible catalog use on-demand pricing", async () => {
+	const harness = createHarness({ itemCount: 0, nativeCustomerPricing: false });
+	const add = harness.cart.addItem(
+		{ item_code: "BARCODE-ITEM", uom: "Box", stock_uom: "Nos", rate: 0 },
+		2,
+	);
+	await flushPromises();
+	assert.equal(harness.requests.length, 1);
+	assert.deepEqual(harness.requests[0].items[0], {
+		item_code: "BARCODE-ITEM",
+		uom: "Box",
+		qty: 2,
+		request_key: "0",
+	});
+	harness.requests[0].resolve({ "BARCODE-ITEM": 88 });
+	await add;
+	assert.equal(harness.cart.invoiceItems[0].rate, 88);
+});
+
+test("compatibility cart quantity and UOM changes are genuine pricing inputs", async () => {
+	const cartItem = { item_code: "ITEM-001", uom: "Nos", quantity: 1, rate: 0 };
+	const harness = createHarness({
+		itemCount: 0,
+		cartItems: [cartItem],
+		nativeCustomerPricing: false,
+	});
+	harness.timers.advance(81);
+	await flushPromises();
+	harness.requests[0].resolve({ "ITEM-001": 10 });
+	await flushPromises();
+
+	cartItem.quantity = 3;
+	harness.subscribers.cart();
+	harness.timers.advance(81);
+	await flushPromises();
+	assert.equal(harness.requests[1].items[0].qty, 3);
+	harness.requests[1].resolve({ "ITEM-001": 25 });
+	await flushPromises();
+
+	cartItem.uom = "Box";
+	harness.subscribers.cart();
+	harness.timers.advance(81);
+	await flushPromises();
+	assert.equal(harness.requests[2].items[0].uom, "Box");
+	harness.requests[2].resolve({ "ITEM-001": 75 });
+	await flushPromises();
+	assert.equal(cartItem.rate, 75);
+});
+
+test("four 1,074-item sessions remain idle after pricing their visible 25 rows", async () => {
+	const sessions = Array.from({ length: 4 }, () =>
+		createHarness({ itemCount: 1_074, visibleCount: 25 }),
+	);
+	for (const session of sessions) session.timers.advance(81);
+	await flushPromises();
+	for (const session of sessions) {
+		assert.equal(session.requests.length, 1);
+		session.requests[0].resolve();
+	}
+	await flushPromises();
+	for (const session of sessions) {
+		for (let mutation = 0; mutation < 20; mutation++)
+			session.subscribers.items();
+		session.timers.advance(10 * 60 * 1000);
+	}
+	await flushPromises();
+	assert.equal(
+		sessions.reduce((total, session) => total + session.requests.length, 0),
+		4,
+	);
+	assert.ok(sessions.every((session) => session.maxConcurrent === 1));
+	console.log(
+		"POS pricing 4-session metrics:",
+		JSON.stringify({
+			catalogItemsPerSession: 1_074,
+			visibleItemsPerSession: 25,
+			apiRequests: 4,
+			duplicateRequests: 0,
+			idleRequests: 0,
+			maxConcurrentPerSession: 1,
+		}),
+	);
+});
+
+test("a failed request clears pending state and a later genuine item change retries", async () => {
+	const harness = createHarness({ itemCount: 2, visibleCount: 1 });
 	harness.timers.advance(81);
 	await flushPromises();
 	assert.equal(harness.requests.length, 1);
 	harness.requests[0].fail();
 	await flushPromises();
 
-	harness.subscribers.items();
+	harness.setVisibleRange(1, 1);
 	harness.timers.advance(81);
 	await flushPromises();
 	assert.equal(harness.requests.length, 2);
-	harness.requests[1].resolve({ "ITEM-001": 42 });
+	harness.requests[1].resolve({ "ITEM-002": 42 });
 	await flushPromises();
-	assert.equal(harness.items.allItems[0].rate, 42);
+	assert.equal(harness.items.allItems[1].rate, 42);
 });
 
 test("customer changes isolate cache and make the in-flight response stale", async () => {
@@ -380,7 +518,11 @@ test("customer A is authoritatively revalidated after A to B to A", async () => 
 	harness.subscribers.cart();
 	harness.timers.advance(81);
 	await flushPromises();
-	assert.equal(harness.requests.length, 3, "returning to A must not reuse old A cache");
+	assert.equal(
+		harness.requests.length,
+		3,
+		"returning to A must not reuse old A cache",
+	);
 	assert.equal(harness.requests[2].customer, "Customer A");
 	harness.requests[2].resolve({ "ITEM-001": 30 });
 	await flushPromises();
@@ -435,8 +577,8 @@ test("native POS Next cart pricing and discounts are not overwritten", async () 
 	});
 });
 
-test("expired cache entries are refetched and reapplied", async () => {
-	const harness = createHarness();
+test("expired cache entries wait for genuine demand before being fetched again", async () => {
+	const harness = createHarness({ itemCount: 2, visibleCount: 1 });
 	harness.timers.advance(81);
 	await flushPromises();
 	harness.requests[0].resolve({ "ITEM-001": 10 });
@@ -447,27 +589,43 @@ test("expired cache entries are refetched and reapplied", async () => {
 	harness.subscribers.items();
 	harness.timers.advance(81);
 	await flushPromises();
-	assert.equal(harness.requests.length, 2);
-	harness.requests[1].resolve({ "ITEM-001": 25 });
+	assert.equal(harness.requests.length, 1, "TTL expiry alone must not fetch");
+
+	harness.setVisibleRange(1, 1);
+	harness.timers.advance(81);
+	await flushPromises();
+	harness.requests[1].resolve({ "ITEM-002": 20 });
+	await flushPromises();
+	harness.setVisibleRange(0, 1);
+	harness.timers.advance(81);
+	await flushPromises();
+	assert.equal(harness.requests.length, 3);
+	harness.requests[2].resolve({ "ITEM-001": 25 });
 	await flushPromises();
 	assert.equal(harness.items.allItems[0].rate, 25);
 });
 
-test("LRU eviction bounds the cache and evicted rows are refetched", async () => {
-	const harness = createHarness({ itemCount: 501 });
-	harness.timers.advance(81);
-	await flushPromises();
-	for (let index = 0; index < Math.ceil(501 / 25); index++) {
-		assert.equal(harness.requests.length, index + 1);
-		harness.requests[index].resolve();
+test("LRU eviction never independently schedules a pricing request", async () => {
+	const harness = createHarness({ itemCount: 600, visibleCount: 100 });
+	for (let page = 0; page < 6; page++) {
+		if (page) harness.setVisibleRange(page * 100, 100);
+		harness.timers.advance(81);
 		await flushPromises();
+		const firstRequest = page * 4;
+		for (let batch = 0; batch < 4; batch++) {
+			harness.requests[firstRequest + batch].resolve();
+			await flushPromises();
+		}
 	}
-
+	assert.equal(harness.requests.length, 24);
 	harness.subscribers.items();
-	harness.timers.advance(81);
+	harness.timers.advance(10 * 60 * 1000);
 	await flushPromises();
-	assert.equal(harness.requests.length, 22);
-	assert.equal(harness.requests[21].items.length, 1);
+	assert.equal(
+		harness.requests.length,
+		24,
+		"eviction/output mutations must stay idle",
+	);
 });
 
 test("site midnight invalidates date pricing without using the browser date", async () => {
@@ -501,10 +659,11 @@ test("hung request times out, releases pending keys, and recovers once", async (
 	const harness = createHarness();
 	harness.timers.advance(81);
 	await flushPromises();
-	harness.subscribers.items();
 	harness.timers.advance(15_001);
 	await flushPromises();
 	assert.equal(harness.requests[0].aborted, true);
+	harness.cart.customer = { name: "Customer B" };
+	harness.subscribers.cart();
 	harness.timers.advance(81);
 	await flushPromises();
 	assert.equal(harness.requests.length, 2);
@@ -517,9 +676,10 @@ test("late response after logical timeout cannot overwrite recovered pricing", a
 	const harness = createHarness({ transportIgnoresAbort: true });
 	harness.timers.advance(81);
 	await flushPromises();
-	harness.subscribers.items();
 	harness.timers.advance(15_001);
 	await flushPromises();
+	harness.cart.customer = { name: "Customer B" };
+	harness.subscribers.cart();
 	harness.timers.advance(81);
 	await flushPromises();
 	assert.equal(harness.requests.length, 2);
@@ -534,9 +694,10 @@ test("repeated timeouts require mutations and do not create an automatic storm",
 	const harness = createHarness();
 	harness.timers.advance(81);
 	await flushPromises();
-	harness.subscribers.items();
 	harness.timers.advance(15_001);
 	await flushPromises();
+	harness.cart.customer = { name: "Customer B" };
+	harness.subscribers.cart();
 	harness.timers.advance(81);
 	await flushPromises();
 	assert.equal(harness.requests.length, 2);
@@ -575,13 +736,21 @@ test("manual refresh bypasses TTL, clears cache, and commits new catalog prices 
 	assert.equal(duplicate, first);
 	await flushPromises();
 	assert.equal(harness.requests.length, 2);
-	assert.equal(harness.items.allItems[0].rate, 10, "prepared prices must not apply early");
+	assert.equal(
+		harness.items.allItems[0].rate,
+		10,
+		"prepared prices must not apply early",
+	);
 	harness.requests[1].resolve({ "ITEM-001": 35 });
 	const transaction = await first;
 	assert.equal(harness.items.allItems[0].rate, 10);
 	assert.equal(transaction.commit(), true);
 	assert.equal(harness.items.allItems[0].rate, 35);
-	assert.equal(harness.requests.length, 2, "duplicate clicks must share one request");
+	assert.equal(
+		harness.requests.length,
+		2,
+		"duplicate clicks must share one request",
+	);
 	transaction.rollback();
 	assert.equal(harness.items.allItems[0].rate, 10);
 });
