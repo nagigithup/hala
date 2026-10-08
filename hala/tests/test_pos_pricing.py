@@ -1,9 +1,12 @@
+from datetime import datetime
 from unittest.mock import patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
 
 from hala.api.pos_pricing import (
+	_get_customer_item_details,
+	_pricing_date_metadata,
 	_validate_submitted_price_list_rates,
 	get_catalog_prices,
 	resolve_effective_price_list,
@@ -134,6 +137,98 @@ class TestPOSCustomerPriceList(IntegrationTestCase):
 		self.assertEqual(result["prices_by_request"]["kg-one"]["rate"], 10)
 		self.assertEqual(result["prices_by_request"]["kg-three"]["rate"], 30)
 		self.assertEqual(result["prices_by_request"]["box-one"]["rate"], 20)
+
+	def test_alternate_uom_preserves_customer_quantity_and_price_list_context(self):
+		context = frappe._dict(
+			{
+				"pos_profile": "Test POS",
+				"profile": frappe._dict({"warehouse": "Main", "company": "Test Company"}),
+				"price_list": "Customer List",
+				"posting_date": "2026-10-08",
+				"doc": frappe._dict(
+					{
+						"customer": "Customer A",
+						"selling_price_list": "Customer List",
+						"posting_date": "2026-10-08",
+					}
+				),
+			}
+		)
+		item_doc = frappe._dict(
+			{
+				"is_sales_item": 1,
+				"has_batch_no": 0,
+				"has_serial_no": 0,
+				"is_stock_item": 1,
+			}
+		)
+		with (
+			patch("hala.api.pos_pricing.frappe.get_cached_doc", return_value=item_doc),
+			patch(
+				"pos_next.api.items.get_item_detail",
+				return_value={
+					"rate": 80,
+					"price_list_rate": 100,
+					"discount_percentage": 20,
+					"pricing_rules": "BOX-RULE",
+					"uom": "Box",
+				},
+			) as get_detail,
+		):
+			result = _get_customer_item_details(
+				item_code="ITEM-1",
+				pos_profile="Test POS",
+				customer="Customer A",
+				qty=10,
+				uom="Box",
+				pricing_context=context,
+			)
+
+		request_item = get_detail.call_args.kwargs["item"]
+		self.assertEqual(request_item["customer"], "Customer A")
+		self.assertEqual(request_item["qty"], 10)
+		self.assertEqual(request_item["uom"], "Box")
+		self.assertEqual(get_detail.call_args.kwargs["price_list"], "Customer List")
+		self.assertEqual(result["discount_percentage"], 20)
+		self.assertEqual(result["pricing_rules"], "BOX-RULE")
+
+	def test_catalog_uses_site_date_instead_of_untrusted_client_date(self):
+		context = frappe._dict(
+			{
+				"price_list": "Customer List",
+				"pos_profile": "Test POS",
+				"posting_date": "2026-10-08",
+			}
+		)
+		with (
+			patch(
+				"hala.api.pos_pricing._pricing_date_metadata",
+				return_value={"pricing_date": "2026-10-08", "date_refresh_ms": 1000},
+			),
+			patch("hala.api.pos_pricing._build_pricing_context", return_value=context) as build_context,
+			patch(
+				"hala.api.pos_pricing._get_customer_item_details",
+				return_value={"price_list_rate": 25, "uom": "Nos"},
+			),
+		):
+			result = get_catalog_prices(
+				customer="Customer",
+				pos_profile="Test POS",
+				items=[{"item_code": "ITEM-1"}],
+				transaction_date="1999-12-31",
+			)
+
+		self.assertEqual(build_context.call_args.kwargs["transaction_date"], "2026-10-08")
+		self.assertEqual(result["pricing_date"], "2026-10-08")
+
+	def test_pricing_date_metadata_uses_site_midnight_boundary(self):
+		before_midnight = _pricing_date_metadata(datetime(2026, 10, 7, 23, 59, 59, 500000))
+		at_midnight = _pricing_date_metadata(datetime(2026, 10, 8, 0, 0, 0))
+
+		self.assertEqual(before_midnight["pricing_date"], "2026-10-07")
+		self.assertEqual(before_midnight["date_refresh_ms"], 1500)
+		self.assertEqual(at_midnight["pricing_date"], "2026-10-08")
+		self.assertEqual(at_midnight["date_refresh_ms"], 86_401_000)
 
 	def test_customer_switching_resolves_a_b_a_without_cached_result(self):
 		customer_lists = {"Customer A": "Retail", "Customer B": "Wholesale"}

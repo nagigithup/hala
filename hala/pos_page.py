@@ -1,4 +1,7 @@
+from frappe.utils import now_datetime
 from frappe.website.page_renderers.template_page import TemplatePage
+
+from hala.api.pos_pricing import _pricing_date_metadata
 
 
 class CustomerPricingPOSPage(TemplatePage):
@@ -9,7 +12,12 @@ class CustomerPricingPOSPage(TemplatePage):
 
 	def get_html(self):
 		html = super().get_html()
-		# Bump the query version when changing this standalone script so cashier
-		# browsers do not keep the pre-single-flight implementation after deploy.
-		script = '<script defer src="/assets/hala/js/pos_customer_prices.js?v=3"></script>'
+		date_context = _pricing_date_metadata(now_datetime())
+		# The site-rendered date avoids using the cashier computer's timezone. The
+		# refresh delay schedules an authoritative check just after site midnight.
+		script = (
+			'<script defer src="/assets/hala/js/pos_customer_prices.js?v=5" '
+			f'data-pricing-date="{date_context["pricing_date"]}" '
+			f'data-date-refresh-ms="{date_context["date_refresh_ms"]}"></script>'
+		)
 		return html.replace("</head>", f"{script}</head>", 1)

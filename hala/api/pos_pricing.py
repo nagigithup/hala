@@ -5,10 +5,11 @@ for each cart/customer and is revalidated when the invoice draft is created.
 """
 
 import json
+from datetime import timedelta
 
 import frappe
 from frappe import _
-from frappe.utils import cint, flt, nowdate
+from frappe.utils import cint, flt, now_datetime, nowdate
 
 
 FINAL_FALLBACK_PRICE_LIST = "Standard Selling"
@@ -69,6 +70,30 @@ def get_effective_price_list(customer=None, pos_profile=None):
 	"""Return the server-resolved price list for the current POS cart."""
 	return {
 		"price_list": resolve_effective_price_list(customer=customer, pos_profile=pos_profile)
+	}
+
+
+def _pricing_date_metadata(current_datetime=None):
+	"""Return the site date and delay to its next midnight."""
+	current_datetime = current_datetime or now_datetime()
+	next_midnight = current_datetime.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(
+		days=1
+	)
+	return {
+		"pricing_date": current_datetime.date().isoformat(),
+		# Refresh just after site midnight; client clock/timezone is irrelevant.
+		"date_refresh_ms": max(
+			1000, int((next_midnight - current_datetime).total_seconds() * 1000) + 1000
+		),
+	}
+
+
+@frappe.whitelist()
+def get_pricing_context(customer=None, pos_profile=None):
+	"""Return server-authoritative context used by the POS pricing cache."""
+	return {
+		"price_list": resolve_effective_price_list(customer=customer, pos_profile=pos_profile),
+		**_pricing_date_metadata(),
 	}
 
 
@@ -204,10 +229,13 @@ def get_catalog_prices(customer=None, pos_profile=None, items=None, transaction_
 			{"item_code": item_code, "uom": uom or None, "qty": qty},
 		)
 
+	date_metadata = _pricing_date_metadata()
 	context = _build_pricing_context(
 		customer=customer,
 		pos_profile=pos_profile,
-		transaction_date=transaction_date,
+		# Kept in the method signature for API compatibility, but catalog pricing
+		# always uses the site's current date instead of a cashier/browser value.
+		transaction_date=date_metadata["pricing_date"],
 	)
 	price_list = context.price_list
 	calculated_prices = {}
@@ -240,7 +268,7 @@ def get_catalog_prices(customer=None, pos_profile=None, items=None, transaction_
 
 	return {
 		"price_list": price_list,
-		"pricing_date": context.posting_date,
+		**date_metadata,
 		"prices": prices,
 		"prices_by_request": prices_by_request,
 	}
