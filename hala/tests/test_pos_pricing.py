@@ -6,6 +6,7 @@ from frappe.tests import IntegrationTestCase
 
 from hala.api.pos_pricing import (
 	_get_customer_item_details,
+	_get_customer_specific_price_list_rate,
 	_pricing_date_metadata,
 	_validate_submitted_price_list_rates,
 	get_catalog_prices,
@@ -78,6 +79,172 @@ class TestPOSCustomerPriceList(IntegrationTestCase):
 			)
 		self.assertEqual(result["price_list"], "Customer List")
 		self.assertEqual(result["prices"]["ITEM-1"]["rate"], 100)
+
+	def test_customer_specific_item_price_beats_newer_generic_price(self):
+		price_list = "__Hala Customer Price Priority"
+		customer = "__Hala Price Customer"
+		item_code = "__HALA-PRICE-ITEM"
+		customer_group = "__Hala Price Customer Group"
+		territory = "__Hala Price Territory"
+		company_currency = frappe.get_cached_value("Company", "alnagi", "default_currency") or "SAR"
+
+		frappe.get_doc(
+			{
+				"doctype": "Price List",
+				"price_list_name": price_list,
+				"enabled": 1,
+				"selling": 1,
+				"currency": company_currency,
+			}
+		).insert()
+		frappe.get_doc(
+			{
+				"doctype": "Customer Group",
+				"customer_group_name": customer_group,
+				"parent_customer_group": "All Customer Groups",
+				"is_group": 0,
+			}
+		).insert()
+		frappe.get_doc(
+			{
+				"doctype": "Territory",
+				"territory_name": territory,
+				"parent_territory": "All Territories",
+				"is_group": 0,
+			}
+		).insert()
+		frappe.get_doc(
+			{
+				"doctype": "Customer",
+				"customer_name": customer,
+				"customer_type": "Individual",
+				"customer_group": customer_group,
+				"territory": territory,
+				"default_price_list": price_list,
+			}
+		).insert()
+		frappe.get_doc(
+			{
+				"doctype": "Item",
+				"item_code": item_code,
+				"item_name": item_code,
+				"item_group": "All Item Groups",
+				"stock_uom": "Nos",
+				"is_sales_item": 1,
+			}
+		).insert()
+		frappe.get_doc(
+			{
+				"doctype": "Item Price",
+				"price_list": price_list,
+				"item_code": item_code,
+				"uom": "Nos",
+				"price_list_rate": 50,
+				"valid_from": "2026-10-03",
+			}
+		).insert()
+		frappe.get_doc(
+			{
+				"doctype": "Item Price",
+				"price_list": price_list,
+				"item_code": item_code,
+				"uom": "Nos",
+				"price_list_rate": 100,
+				"customer": customer,
+				"valid_from": "2026-08-23",
+			}
+		).insert()
+
+		self.assertEqual(
+			_get_customer_specific_price_list_rate(
+				item_code=item_code,
+				price_list=price_list,
+				customer=customer,
+				transaction_date="2026-10-08",
+				qty=1,
+				uom="Nos",
+				stock_uom="Nos",
+			),
+			100,
+		)
+
+	def test_customer_specific_rate_reapplies_erpnext_pricing_rule(self):
+		context = frappe._dict(
+			{
+				"customer": "Employee Customer",
+				"pos_profile": "Test POS",
+				"profile": frappe._dict(
+					{"warehouse": "Main", "company": "Test Company", "currency": "SAR"}
+				),
+				"price_list": "Customer List",
+				"posting_date": "2026-10-08",
+				"doc": frappe._dict(
+					{
+						"doctype": "Sales Invoice",
+						"company": "Test Company",
+						"customer": "Employee Customer",
+						"selling_price_list": "Customer List",
+						"posting_date": "2026-10-08",
+						"transaction_date": "2026-10-08",
+						"is_pos": 1,
+						"pos_profile": "Test POS",
+					}
+				),
+			}
+		)
+		item_doc = frappe._dict(
+			{
+				"name": "ITEM-1",
+				"stock_uom": "Nos",
+				"variant_of": None,
+				"is_sales_item": 1,
+				"has_batch_no": 0,
+				"has_serial_no": 0,
+				"is_stock_item": 1,
+			}
+		)
+		with (
+			patch("hala.api.pos_pricing.frappe.get_cached_doc", return_value=item_doc),
+			patch(
+				"pos_next.api.items.get_item_detail",
+				return_value={
+					"price_list_rate": 50,
+					"discount_percentage": 10,
+					"discount_amount": 5,
+					"uom": "Nos",
+					"stock_uom": "Nos",
+					"conversion_factor": 1,
+					"price_list_currency": "SAR",
+				},
+			),
+			patch(
+				"hala.api.pos_pricing._get_customer_specific_price_list_rate",
+				return_value=100,
+			),
+			patch(
+				"erpnext.accounts.doctype.pricing_rule.pricing_rule.get_pricing_rule_for_item",
+				return_value=frappe._dict(
+					{
+						"discount_percentage": 10,
+						"discount_amount": 10,
+						"pricing_rules": '["EMPLOYEE-RULE"]',
+					}
+				),
+			),
+		):
+			result = _get_customer_item_details(
+				item_code="ITEM-1",
+				pos_profile="Test POS",
+				customer="Employee Customer",
+				qty=1,
+				uom="Nos",
+				pricing_context=context,
+			)
+
+		self.assertEqual(result["price_list_rate"], 100)
+		self.assertEqual(result["discount_percentage"], 10)
+		self.assertEqual(result["discount_amount"], 10)
+		self.assertEqual(result["pricing_rules"], '["EMPLOYEE-RULE"]')
 
 	def test_catalog_deduplicates_same_pricing_context(self):
 		context = frappe._dict(

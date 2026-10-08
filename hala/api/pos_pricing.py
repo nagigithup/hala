@@ -129,6 +129,136 @@ def _build_pricing_context(customer=None, pos_profile=None, transaction_date=Non
 	)
 
 
+def _get_customer_specific_price_list_rate(
+	item_code,
+	price_list,
+	customer,
+	transaction_date,
+	qty,
+	uom,
+	stock_uom,
+	conversion_factor=1,
+	batch_no=None,
+	variant_of=None,
+	plc_conversion_rate=1,
+	conversion_rate=1,
+):
+	"""Return an applicable party-specific Item Price, or ``None``.
+
+	ERPNext intentionally lets both party-specific and generic Item Price rows
+	participate in one query.  In the installed version, ``valid_from`` is sorted
+	before party specificity, so a newer generic row can hide an older customer
+	row.  Hala's configured contract is the opposite: an applicable customer row
+	wins, while ERPNext remains responsible for eligibility, UOM conversion,
+	currency conversion, and the generic fallback.
+	"""
+	if not customer or not price_list:
+		return None
+
+	from erpnext.stock.get_item_details import _get_item_price_query, _order_item_prices
+
+	price_list_uom_dependant = cint(
+		frappe.get_cached_value("Price List", price_list, "price_list_uom_dependant") or 0
+	)
+	requested_uom = uom or stock_uom or ""
+	query_uoms = [requested_uom]
+	if stock_uom and stock_uom != requested_uom:
+		query_uoms.append(stock_uom)
+
+	for candidate_item_code in filter(None, (item_code, variant_of)):
+		for query_uom in query_uoms:
+			price_context = frappe._dict(
+				{
+					"item_code": candidate_item_code,
+					"price_list": price_list,
+					"customer": customer,
+					"uom": query_uom,
+					"transaction_date": transaction_date,
+					"batch_no": batch_no,
+				}
+			)
+			query, item_price = _get_item_price_query(
+				price_context, [candidate_item_code]
+			)
+			query = query.where(item_price.customer == customer).select(
+				item_price.name,
+				item_price.price_list_rate,
+				item_price.uom,
+				item_price.packing_unit,
+			)
+			candidates = _order_item_prices(query, item_price, price_context).run(
+				as_dict=True
+			)
+
+			for candidate in candidates:
+				packing_unit = flt(candidate.packing_unit)
+				if packing_unit and flt(qty) % packing_unit:
+					continue
+
+				rate = flt(candidate.price_list_rate)
+				if (candidate.uom or stock_uom) != requested_uom and not price_list_uom_dependant:
+					rate *= flt(conversion_factor) or 1
+				rate *= (flt(plc_conversion_rate) or 1) / (flt(conversion_rate) or 1)
+				return rate
+
+	return None
+
+
+def _apply_customer_specific_price(details, item_doc, context, qty, uom):
+	"""Prefer a valid customer Item Price, then re-run ERPNext Pricing Rules."""
+	from erpnext.accounts.doctype.pricing_rule.pricing_rule import (
+		get_pricing_rule_for_item,
+		set_transaction_type,
+	)
+	from erpnext.stock.get_item_details import remove_standard_fields
+
+	requested_uom = uom or details.get("uom") or item_doc.stock_uom
+	price_list_rate = _get_customer_specific_price_list_rate(
+		item_code=item_doc.name,
+		variant_of=item_doc.variant_of,
+		price_list=context.price_list,
+		customer=context.customer,
+		transaction_date=context.posting_date,
+		qty=qty,
+		uom=requested_uom,
+		stock_uom=item_doc.stock_uom,
+		conversion_factor=details.get("conversion_factor") or 1,
+		batch_no=details.get("batch_no"),
+		plc_conversion_rate=details.get("plc_conversion_rate") or 1,
+		conversion_rate=details.get("conversion_rate") or 1,
+	)
+	if price_list_rate is None:
+		return details
+
+	details["price_list_rate"] = price_list_rate
+	pricing_args = frappe._dict(context.doc.copy())
+	pricing_args.update(details)
+	pricing_args.update(
+		{
+			"item_code": item_doc.name,
+			"qty": qty,
+			"uom": requested_uom,
+			"price_list": context.price_list,
+			"selling_price_list": context.price_list,
+			"price_list_rate": price_list_rate,
+			"transaction_date": context.posting_date,
+			"posting_date": context.posting_date,
+			"customer": context.customer,
+			"is_pos": 1,
+			"pos_profile": context.pos_profile,
+			"currency": details.get("price_list_currency")
+			or context.profile.get("currency"),
+		}
+	)
+	set_transaction_type(pricing_args)
+	pricing_details = get_pricing_rule_for_item(
+		pricing_args, doc=frappe._dict(context.doc.copy())
+	)
+	if pricing_details:
+		details.update(remove_standard_fields(pricing_details))
+	return details
+
+
 def _get_customer_item_details(
 	item_code,
 	pos_profile,
@@ -173,6 +303,7 @@ def _get_customer_item_details(
 		price_list=effective_price_list,
 		company=profile.company,
 	)
+	_apply_customer_specific_price(details, item_doc, context, qty, uom)
 	details["selling_price_list"] = effective_price_list
 	details["effective_price_list"] = effective_price_list
 	return details
