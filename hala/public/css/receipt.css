@@ -1,0 +1,37 @@
+.hala-receipt-fields {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px 18px;
+}
+
+.hala-receipt-fields [data-field="description"] {
+	grid-column: 1 / -1;
+}
+
+.hala-receipt-table tbody tr[data-receipt] {
+	cursor: pointer;
+}
+
+.hala-receipt-table tbody tr[data-receipt]:hover {
+	background: var(--subtle-fg);
+}
+
+.hala-receipt-table input[type="number"] {
+	min-width: 130px;
+}
+
+.hala-receipt-allocation-summary {
+	margin-top: 10px;
+	color: var(--text-muted);
+	font-size: var(--text-sm);
+}
+
+@media (max-width: 767px) {
+	.hala-receipt-fields {
+		grid-template-columns: 1fr;
+	}
+
+	.hala-receipt-fields [data-field="description"] {
+		grid-column: auto;
+	}
+}

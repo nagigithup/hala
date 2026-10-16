@@ -8,8 +8,15 @@ from hala.api.deposit import (
 	DEPOSIT_STATUS_PARTIAL,
 	DEPOSIT_STATUS_REFUNDED,
 	_deposit_state,
+	_get_original_deposit,
 	_make_payment_entry,
+	_refund_cashier_selection,
+	_resolve_refund_shift,
 	get_deposits,
+)
+from pos_next.pos_next.doctype.pos_closing_shift.pos_closing_shift import (
+	get_payments_entries,
+	get_signed_payment_entry_amount,
 )
 
 
@@ -30,6 +37,23 @@ class TestHalaDeposit(IntegrationTestCase):
 		self.assertEqual(
 			get_all.call_args.kwargs["filters"]["custom_cashier_profile"], "Profile A"
 		)
+		self.assertEqual(get_all.call_args.kwargs["filters"]["custom_is_deposit"], 1)
+
+	@patch("hala.api.deposit.validate_cashier_document")
+	@patch("hala.api.deposit.frappe.get_doc")
+	def test_normal_customer_receipt_cannot_be_opened_as_deposit(
+		self, get_doc, _validate_cashier_document
+	):
+		get_doc.return_value = frappe._dict(
+			name="ACC-PAY-NORMAL",
+			docstatus=1,
+			payment_type="Receive",
+			custom_is_deposit=0,
+			custom_original_deposit_payment=None,
+		)
+
+		with self.assertRaises(frappe.ValidationError):
+			_get_original_deposit("ACC-PAY-NORMAL")
 
 	def test_deposit_schema_page_and_receipt_are_installed(self):
 		for fieldname in (
@@ -79,6 +103,100 @@ class TestHalaDeposit(IntegrationTestCase):
 		full = _deposit_state(500, 500)
 		self.assertEqual(full.balance, 0)
 		self.assertEqual(full.status, DEPOSIT_STATUS_REFUNDED)
+
+	@patch("hala.api.deposit._eligible_refund_cashiers")
+	@patch("hala.api.deposit.frappe.db.get_value", return_value="original@example.com")
+	def test_original_cashier_is_default_when_active(self, _get_value, eligible):
+		eligible.return_value = [
+			frappe._dict(user="other@example.com"),
+			frappe._dict(user="original@example.com"),
+		]
+		original = frappe._dict(reference_no="SHIFT-1")
+
+		selection = _refund_cashier_selection(original)
+
+		self.assertEqual(selection.default_cashier, "original@example.com")
+
+	@patch("hala.api.deposit._eligible_refund_cashiers")
+	@patch("hala.api.deposit.frappe.db.get_value", return_value="closed@example.com")
+	def test_current_cashier_is_fallback_when_original_is_ineligible(self, _get_value, eligible):
+		eligible.return_value = [frappe._dict(user=frappe.session.user)]
+		original = frappe._dict(reference_no="CLOSED-SHIFT")
+
+		selection = _refund_cashier_selection(original)
+
+		self.assertEqual(selection.default_cashier, frappe.session.user)
+
+	@patch("hala.api.deposit.frappe.get_doc")
+	@patch("hala.api.deposit.frappe.db.sql", return_value=[("SHIFT-2",)])
+	@patch("hala.api.deposit.frappe.db.has_column", return_value=True)
+	@patch("hala.api.deposit._refund_cashier_selection")
+	def test_selected_same_profile_cashier_resolves_own_shift(
+		self, selection, _has_column, _sql, get_doc
+	):
+		selection.return_value = frappe._dict(
+			cashiers=[
+				frappe._dict(
+					user="other@example.com",
+					pos_opening_shift="SHIFT-2",
+					pos_profile="Profile A",
+				)
+			],
+			default_cashier=None,
+		)
+		get_doc.side_effect = lambda doctype, name: frappe._dict(doctype=doctype, name=name)
+		original = frappe._dict(
+			custom_cashier_profile="Profile A", company="Company", reference_no="SHIFT-1"
+		)
+
+		result = _resolve_refund_shift(original, "other@example.com")
+
+		self.assertEqual(result.pos_opening_shift.name, "SHIFT-2")
+		self.assertEqual(result.pos_profile.name, "Profile A")
+
+	@patch("hala.api.deposit._refund_cashier_selection")
+	def test_cross_profile_or_inactive_cashier_is_rejected(self, selection):
+		selection.return_value = frappe._dict(
+			cashiers=[frappe._dict(user="allowed@example.com")],
+			default_cashier="allowed@example.com",
+		)
+		with self.assertRaises(frappe.PermissionError):
+			_resolve_refund_shift(
+				frappe._dict(custom_cashier_profile="Profile A", company="Company"),
+				"other-branch@example.com",
+			)
+
+	@patch("hala.api.deposit._refund_cashier_selection")
+	def test_refund_is_blocked_when_no_eligible_active_cashier_exists(self, selection):
+		selection.return_value = frappe._dict(cashiers=[], default_cashier=None)
+		with self.assertRaises(frappe.PermissionError):
+			_resolve_refund_shift(
+				frappe._dict(custom_cashier_profile="Profile A", company="Company")
+			)
+
+	@patch(
+		"pos_next.pos_next.doctype.pos_closing_shift.pos_closing_shift.validate_official_closing_access"
+	)
+	@patch(
+		"pos_next.pos_next.doctype.pos_closing_shift.pos_closing_shift.frappe.get_all",
+		return_value=[],
+	)
+	def test_closing_includes_receive_and_pay_with_signed_refunds(self, get_all, _validate):
+		get_payments_entries("SHIFT-2")
+		self.assertEqual(
+			get_all.call_args.kwargs["filters"]["payment_type"],
+			["in", ["Receive", "Pay"]],
+		)
+		self.assertEqual(
+			get_signed_payment_entry_amount(
+				frappe._dict(payment_type="Receive", paid_amount=10)
+			),
+			10,
+		)
+		self.assertEqual(
+			get_signed_payment_entry_amount(frappe._dict(payment_type="Pay", paid_amount=4)),
+			-4,
+		)
 
 	def test_receive_payment_is_unallocated_and_linked_to_shift(self):
 		pe = MagicMock()

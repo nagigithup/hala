@@ -46,8 +46,8 @@ class HalaDepositPage {
 				<section class="hala-deposit-card hala-cashier-card">
 					<div class="hala-deposit-fields">
 						<div data-field="customer"></div>
-						<div data-field="item_code"></div>
-						<div data-field="qty"></div>
+						<div data-field="item_code" hidden></div>
+						<div data-field="qty" hidden></div>
 						<div data-field="amount"></div>
 						<div data-field="description"></div>
 					</div>
@@ -257,8 +257,26 @@ class HalaDepositPage {
 		}
 	}
 
-	refund() {
+	async refund() {
 		if (this.busy || !this.deposit || this.deposit.balance <= 0) return;
+		this.busy = true;
+		let cashierSelection;
+		try {
+			cashierSelection = await this.call("get_refund_cashiers", {
+				deposit_name: this.deposit.name,
+			});
+		} finally {
+			this.busy = false;
+		}
+		const cashierOptions = cashierSelection.cashiers.map((cashier) => ({
+			value: cashier.user,
+			label: cashier.cashier_name === cashier.user
+				? cashier.user
+				: `${cashier.cashier_name} (${cashier.user})`,
+		}));
+		if (!cashierSelection.default_cashier) {
+			cashierOptions.unshift({value: "", label: __("Select Cashier")});
+		}
 		const dialog = new frappe.ui.Dialog({
 			title: __("Refund Deposit"),
 			fields: [
@@ -266,11 +284,13 @@ class HalaDepositPage {
 					options: this.deposit.currency, read_only: 1, default: this.deposit.balance},
 				{fieldname: "amount", fieldtype: "Currency", label: __("Refund Amount"),
 					options: this.deposit.currency, reqd: 1, default: this.deposit.balance},
+				{fieldname: "cashier", fieldtype: "Select", label: __("Cashier"), reqd: 1,
+					options: cashierOptions, default: cashierSelection.default_cashier || ""},
 			],
 			secondary_action_label: __("Cancel"),
 			secondary_action: () => dialog.hide(),
 			primary_action_label: __("Confirm Refund"),
-			primary_action: async ({amount}) => {
+			primary_action: async ({amount, cashier}) => {
 				if (this.busy) return;
 				this.busy = true;
 				dialog.disable_primary_action();
@@ -278,6 +298,7 @@ class HalaDepositPage {
 					const result = await this.call("refund_deposit", {
 						deposit_name: this.deposit.name,
 						amount,
+						cashier,
 						request_id: this.request_id(),
 					});
 					dialog.hide();

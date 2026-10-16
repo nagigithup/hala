@@ -14,6 +14,13 @@
 			href: "/desk/hala-deposit",
 			route: ["hala-deposit"],
 		},
+		{
+			id: "receipt",
+			label: "سند قبض",
+			icon: "file-text",
+			href: "/desk/hala-receipt",
+			route: ["hala-receipt"],
+		},
 	];
 
 	function navigation_item(item, active) {

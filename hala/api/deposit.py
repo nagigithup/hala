@@ -59,9 +59,9 @@ def _validate_item(item_code):
 	frappe.has_permission("Item", "read", item_code, throw=True)
 
 
-def _cashier_context(customer=None):
+def _cashier_context(customer=None, shift_data=None):
 	"""Resolve the active POS Profile and its explicitly configured payment account."""
-	shift_data = _active_shift(required=True)
+	shift_data = shift_data or _active_shift(required=True)
 	shift = shift_data["pos_opening_shift"]
 	profile = shift_data["pos_profile"]
 	company = profile.company
@@ -110,6 +110,168 @@ def _cashier_context(customer=None):
 		payment_account=payment_account,
 		party_account=party_account,
 		party_currency=party_currency,
+	)
+
+
+def _eligible_refund_cashiers(original):
+	"""Return active cashiers in the original deposit's POS Profile (branch scope)."""
+	profile = original.get("custom_cashier_profile")
+	if not profile:
+		frappe.throw(_("The original deposit has no Cashier Profile."))
+
+	preliminary_closed_condition = (
+		"AND IFNULL(opening.custom_preliminary_closed, 0) = 0"
+		if frappe.db.has_column("POS Opening Shift", "custom_preliminary_closed")
+		else ""
+	)
+	rows = frappe.db.sql(
+		f"""
+			SELECT opening.name AS pos_opening_shift,
+			       opening.user,
+			       opening.pos_profile,
+			       user.full_name
+			FROM `tabPOS Opening Shift` opening
+			INNER JOIN `tabPOS Profile` profile
+			        ON profile.name = opening.pos_profile
+			       AND profile.disabled = 0
+			INNER JOIN `tabPOS Profile User` profile_user
+			        ON profile_user.parent = opening.pos_profile
+			       AND profile_user.parenttype = 'POS Profile'
+			       AND profile_user.user = opening.user
+			INNER JOIN `tabUser` user
+			        ON user.name = opening.user
+			       AND user.enabled = 1
+			LEFT JOIN `tabCashier Preliminary Closing` preliminary
+			       ON preliminary.pos_opening_shift = opening.name
+			      AND preliminary.docstatus < 2
+			LEFT JOIN `tabPOS Closing Shift` closing
+			       ON closing.pos_opening_shift = opening.name
+			      AND closing.docstatus < 2
+			WHERE opening.pos_profile = %s
+			  AND opening.company = %s
+			  AND opening.docstatus = 1
+			  AND opening.status = 'Open'
+			  AND IFNULL(opening.pos_closing_shift, '') = ''
+			  {preliminary_closed_condition}
+			  AND preliminary.name IS NULL
+			  AND closing.name IS NULL
+			ORDER BY opening.period_start_date DESC, opening.name DESC
+		""",
+		(profile, original.company),
+		as_dict=True,
+	)
+
+	# Match POS Next's one-current-shift-per-user behavior if historical data
+	# contains more than one open shift for the same cashier.
+	result = []
+	seen = set()
+	for row in rows:
+		if row.user in seen:
+			continue
+		seen.add(row.user)
+		result.append(
+			frappe._dict(
+				user=row.user,
+				cashier_name=row.full_name or row.user,
+				pos_profile=row.pos_profile,
+				pos_opening_shift=row.pos_opening_shift,
+			)
+		)
+	return result
+
+
+def _refund_cashier_selection(original):
+	cashiers = _eligible_refund_cashiers(original)
+	original_cashier = frappe.db.get_value(
+		"POS Opening Shift", original.reference_no, "user"
+	)
+	eligible_users = {row.user for row in cashiers}
+	default_cashier = None
+	if original_cashier in eligible_users:
+		default_cashier = original_cashier
+	elif frappe.session.user in eligible_users:
+		default_cashier = frappe.session.user
+	return frappe._dict(cashiers=cashiers, default_cashier=default_cashier)
+
+
+def _resolve_refund_shift(original, cashier=None):
+	selection = _refund_cashier_selection(original)
+	if not selection.cashiers:
+		frappe.throw(
+			_("No eligible cashier with an active shift exists for this deposit branch."),
+			frappe.PermissionError,
+		)
+
+	cashier = cashier or selection.default_cashier
+	if not cashier:
+		frappe.throw(_("Select an eligible cashier with an active shift."))
+	selected = next((row for row in selection.cashiers if row.user == cashier), None)
+	if not selected:
+		frappe.throw(
+			_("The selected cashier is not authorized for this deposit branch or has no active shift."),
+			frappe.PermissionError,
+		)
+
+	# Lock and recheck the authoritative shift before resolving its accounts.
+	preliminary_closed_condition = (
+		"AND IFNULL(opening.custom_preliminary_closed, 0) = 0"
+		if frappe.db.has_column("POS Opening Shift", "custom_preliminary_closed")
+		else ""
+	)
+	locked = frappe.db.sql(
+		f"""
+			SELECT opening.name
+			FROM `tabPOS Opening Shift` opening
+			WHERE opening.name = %s
+			  AND opening.user = %s
+			  AND opening.pos_profile = %s
+			  AND opening.company = %s
+			  AND opening.docstatus = 1
+			  AND opening.status = 'Open'
+			  AND IFNULL(opening.pos_closing_shift, '') = ''
+			  {preliminary_closed_condition}
+			  AND EXISTS (
+				SELECT 1 FROM `tabPOS Profile` profile
+				WHERE profile.name = opening.pos_profile
+				  AND profile.company = opening.company
+				  AND profile.disabled = 0
+			  )
+			  AND EXISTS (
+				SELECT 1 FROM `tabPOS Profile User` profile_user
+				WHERE profile_user.parent = opening.pos_profile
+				  AND profile_user.parenttype = 'POS Profile'
+				  AND profile_user.user = opening.user
+			  )
+			  AND EXISTS (
+				SELECT 1 FROM `tabUser` user
+				WHERE user.name = opening.user
+				  AND user.enabled = 1
+			  )
+			  AND NOT EXISTS (
+				SELECT 1 FROM `tabCashier Preliminary Closing` preliminary
+				WHERE preliminary.pos_opening_shift = opening.name
+				  AND preliminary.docstatus < 2
+			  )
+			  AND NOT EXISTS (
+				SELECT 1 FROM `tabPOS Closing Shift` closing
+				WHERE closing.pos_opening_shift = opening.name
+				  AND closing.docstatus < 2
+			  )
+			FOR UPDATE
+		""",
+		(
+			selected.pos_opening_shift,
+			selected.user,
+			original.custom_cashier_profile,
+			original.company,
+		),
+	)
+	if not locked:
+		frappe.throw(_("The selected cashier no longer has an active shift."))
+
+	return frappe._dict(
+		pos_opening_shift=frappe.get_doc("POS Opening Shift", selected.pos_opening_shift),
+		pos_profile=frappe.get_doc("POS Profile", selected.pos_profile),
 	)
 
 
@@ -178,11 +340,13 @@ def _make_payment_entry(
 	context,
 	customer,
 	amount,
-	request_id,
+	request_id=None,
 	item_code=None,
 	description=None,
 	qty=0,
 	original_payment=None,
+	is_deposit=True,
+	references=None,
 ):
 	payment_type = "Pay" if original_payment else "Receive"
 	cashier_profile = context.profile.name
@@ -192,8 +356,7 @@ def _make_payment_entry(
 		)
 		validate_cashier_profile(cashier_profile)
 	pe = frappe.new_doc("Payment Entry")
-	pe.update(
-		{
+	values = {
 			"payment_type": payment_type,
 			"company": context.company,
 			"posting_date": nowdate(),
@@ -213,25 +376,32 @@ def _make_payment_entry(
 			"paid_amount": amount,
 			"received_amount": amount,
 			"cost_center": context.profile.get("cost_center"),
-			"custom_is_deposit": 1,
 			"custom_cashier_profile": cashier_profile,
-			"custom_deposit_item": item_code,
-			"custom_deposit_description": description,
-			"custom_deposit_qty": qty,
-			"custom_deposit_original_amount": amount if payment_type == "Receive" else 0,
-			"custom_deposit_refunded_amount": 0,
-			"custom_deposit_balance": amount if payment_type == "Receive" else 0,
-			"custom_deposit_status": DEPOSIT_STATUS_OPEN if payment_type == "Receive" else None,
-			"custom_original_deposit_payment": original_payment,
-			"custom_deposit_request_id": request_id,
-			"remarks": (
-				_("Refund of customer deposit {0}").format(original_payment)
-				if original_payment
-				else _("Refundable customer deposit")
-			),
+			"custom_is_deposit": 1 if is_deposit else 0,
 		}
-	)
-	pe.set("references", [])
+	if is_deposit:
+		values.update(
+			{
+				"custom_deposit_item": item_code,
+				"custom_deposit_description": description,
+				"custom_deposit_qty": qty,
+				"custom_deposit_original_amount": amount if payment_type == "Receive" else 0,
+				"custom_deposit_refunded_amount": 0,
+				"custom_deposit_balance": amount if payment_type == "Receive" else 0,
+				"custom_deposit_status": DEPOSIT_STATUS_OPEN if payment_type == "Receive" else None,
+				"custom_original_deposit_payment": original_payment,
+				"custom_deposit_request_id": request_id,
+				"remarks": (
+					_("Refund of customer deposit {0}").format(original_payment)
+					if original_payment
+					else _("Refundable customer deposit")
+				),
+			}
+		)
+	else:
+		values["remarks"] = description
+	pe.update(values)
+	pe.set("references", references or [])
 	pe.flags.ignore_permissions = True
 	pe.insert()
 	pe.submit()
@@ -309,6 +479,22 @@ def get_deposit(name):
 
 
 @frappe.whitelist()
+def get_refund_cashiers(deposit_name):
+	"""List valid active refund cashiers, scoped to the deposit's POS Profile."""
+	require_portal_access()
+	context = _cashier_context()
+	doc = _get_original_deposit(deposit_name)
+	_validate_deposit_company(doc, context)
+	selection = _refund_cashier_selection(doc)
+	if not selection.cashiers:
+		frappe.throw(
+			_("No eligible cashier with an active shift exists for this deposit branch."),
+			frappe.PermissionError,
+		)
+	return selection
+
+
+@frappe.whitelist()
 def get_deposits(include_refunded=0):
 	require_portal_access()
 	context = _cashier_context()
@@ -375,7 +561,7 @@ def create_deposit(customer, amount, request_id, item_code=None, description=Non
 
 
 @frappe.whitelist(methods=["POST"])
-def refund_deposit(deposit_name, amount, request_id):
+def refund_deposit(deposit_name, amount, request_id, cashier=None):
 	require_portal_access()
 	request_id = _validate_request_id(request_id)
 	existing = frappe.db.get_value(
@@ -404,7 +590,8 @@ def refund_deposit(deposit_name, amount, request_id):
 	if amount > state.balance + AMOUNT_TOLERANCE:
 		frappe.throw(_("Refund amount cannot exceed the available deposit balance."))
 
-	context = _cashier_context(original.party)
+	shift_data = _resolve_refund_shift(original, cashier)
+	context = _cashier_context(original.party, shift_data=shift_data)
 	_validate_deposit_company(original, context)
 	refund = _make_payment_entry(
 		context=context,

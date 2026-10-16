@@ -251,3 +251,26 @@ Manufacturing by Finished Item,التصنيع حسب المنتج النهائي
 Total Manufactured Qty,إجمالي الكمية المصنعة
 No manufacturing entries found for the selected filters.,لا توجد حركات تصنيع ضمن عوامل التصفية المحددة.
 From Date cannot be after To Date.,لا يمكن أن يكون تاريخ البداية بعد تاريخ النهاية.
+Customer Receipt,سند قبض
+New Customer Receipt,سند قبض جديد
+Outstanding Sales Invoices,فواتير المبيعات المستحقة
+Optional: select only the invoices to allocate this receipt to.,اختياري: حدد فقط الفواتير المراد تخصيص هذا السند لها.
+Received Amount,المبلغ المستلم
+Allocation Amount,مبلغ التخصيص
+No outstanding invoices found. You can still create an unallocated receipt.,لا توجد فواتير مستحقة. لا يزال بإمكانك إنشاء سند قبض غير مخصص.
+No invoice selected: the receipt will be recorded as an unallocated customer payment.,لم يتم تحديد فاتورة: سيُسجل السند كدفعة عميل غير مخصصة.
+Unallocated customer payment,دفعة عميل غير مخصصة
+Recorded without invoice allocation,مسجل دون تخصيص لفاتورة
+Allocated to selected invoices,مخصص للفواتير المحددة
+Customer receipt created,تم إنشاء سند القبض
+Customer Receipts,سندات القبض
+No customer receipts found.,لا توجد سندات قبض.
+Unallocated,غير مخصص
+Print Receipt,طباعة السند
+Cashier,الكاشير
+Select Cashier,اختر الكاشير
+No eligible cashier with an active shift exists for this deposit branch.,لا يوجد كاشير مؤهل لديه وردية مفتوحة لهذا الفرع.
+Select an eligible cashier with an active shift.,اختر كاشيرًا مؤهلًا لديه وردية مفتوحة.
+The selected cashier is not authorized for this deposit branch or has no active shift.,الكاشير المحدد غير مخول لهذا الفرع أو لا يملك وردية مفتوحة.
+The selected cashier no longer has an active shift.,لم تعد لدى الكاشير المحدد وردية مفتوحة.
+The original deposit has no Cashier Profile.,لا يحتوي سند التأمين الأصلي على ملف كاشير.
