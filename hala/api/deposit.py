@@ -399,7 +399,7 @@ def _make_payment_entry(
 			}
 		)
 	else:
-		values["remarks"] = description
+		values.update({"custom_remarks": 1, "remarks": description})
 	pe.update(values)
 	pe.set("references", references or [])
 	pe.flags.ignore_permissions = True
