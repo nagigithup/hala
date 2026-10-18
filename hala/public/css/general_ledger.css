@@ -1,0 +1,10 @@
+.report-wrapper .dt-row.hala-gl-zero-balance-row .dt-cell {
+	background-color: #FFF3B0 !important;
+	color: #3d3500 !important;
+}
+
+.report-wrapper .dt-row.hala-gl-zero-balance-row .dt-cell__content,
+.report-wrapper .dt-row.hala-gl-zero-balance-row .dt-cell__content a,
+.report-wrapper .dt-row.hala-gl-zero-balance-row .dt-cell__content span {
+	color: #3d3500 !important;
+}
