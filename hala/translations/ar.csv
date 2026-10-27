@@ -225,6 +225,9 @@ Remaining Due,المبلغ المتبقي
 Change to Customer,المبلغ المرتجع للعميل
 Generate Sales Invoice,توليد فاتورة مبيعات
 Print Booking,طباعة الحجز
+Print POS,طباعة POS
+Print A4,طباعة A4
+Print Format {0} does not exist.,تنسيق الطباعة {0} غير موجود.
 Booking saved,تم حفظ الحجز
 Payment recorded,تم تسجيل الدفعة
 Confirm,تأكيد

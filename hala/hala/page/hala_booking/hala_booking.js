@@ -159,7 +159,8 @@ class HalaBookingPage {
 		this.$shell.on("click", '[data-action="save"]', () => this.save());
 		this.$shell.on("click", '[data-action="pay"]', () => this.pay());
 		this.$shell.on("click", '[data-action="finalize"]', () => this.finalize());
-		this.$shell.on("click", '[data-action="print"]', () => this.print());
+		this.$shell.on("click", '[data-action="print-pos"]', () => this.print());
+		this.$shell.on("click", '[data-action="print-a4"]', () => this.print_a4());
 		this.$shell.on("click", '[data-action="new-booking"]', () => this.new_booking());
 		this.$shell.on("click", '[data-action="refresh-bookings"]', () => this.load_open_bookings());
 		this.$shell.on("input", "[data-open-bookings-search]", (event) => {
@@ -228,7 +229,8 @@ class HalaBookingPage {
 			${is_new || saved_draft ? `<button class="btn btn-primary" data-action="save">${__("Save")}</button>` : ""}
 			${saved_draft ? `<button class="btn btn-default" data-action="pay">${__("Pay")}</button>` : ""}
 			${saved_draft ? `<button class="btn btn-primary" data-action="finalize">${__("Generate Sales Invoice")}</button>` : ""}
-			${saved_draft ? `<button class="btn btn-default" data-action="print">${__("Print Booking")}</button>` : ""}
+			${saved_draft ? `<button class="btn btn-default" data-action="print-a4">${__("Print A4")}</button>` : ""}
+			${saved_draft ? `<button class="btn btn-default" data-action="print-pos">${__("Print POS")}</button>` : ""}
 		`);
 	}
 
@@ -529,5 +531,20 @@ class HalaBookingPage {
 		} catch (error) {
 			console.warn("Booking printing was unavailable:", error);
 		}
+	}
+
+	async print_a4() {
+		if (!this.booking?.name) return;
+		const print_format = "فاتورة مبيعات A4";
+		await frappe.model.with_doctype("Sales Invoice");
+		if (!frappe.meta.get_print_formats("Sales Invoice").includes(print_format)) {
+			frappe.msgprint({
+				title: __("Print Error"),
+				message: __("Print Format {0} does not exist.", [print_format]),
+				indicator: "red",
+			});
+			return;
+		}
+		frappe.utils.print("Sales Invoice", this.booking.name, print_format);
 	}
 }
