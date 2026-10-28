@@ -549,6 +549,24 @@ class HalaBookingPage {
 			});
 			return;
 		}
-		frappe.utils.print("Sales Invoice", this.booking.name, print_format);
+
+		// Chrome's --kiosk-printing flag suppresses the print dialog for every
+		// window in that browser process. Open this A4 print view in Windows'
+		// normal Edge context instead; POS/80mm printing stays in the kiosk.
+		const params = new URLSearchParams({
+			doctype: "Sales Invoice",
+			name: this.booking.name,
+			trigger_print: "1",
+			format: print_format,
+			no_letterhead: "1",
+		});
+		const print_url = frappe.urllib.get_full_url(`/printview?${params.toString()}`);
+		const launcher = document.createElement("a");
+		launcher.href = `microsoft-edge:${print_url}`;
+		launcher.rel = "noopener noreferrer";
+		launcher.style.display = "none";
+		document.body.appendChild(launcher);
+		launcher.click();
+		launcher.remove();
 	}
 }
