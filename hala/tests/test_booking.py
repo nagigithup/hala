@@ -197,6 +197,7 @@ class TestHalaBooking(IntegrationTestCase):
 				"custom_is_booking": 1,
 				"customer": "Customer",
 				"posting_date": "2026-09-30",
+				"posting_time": "14:30:00",
 				"custom_delivery_date": "2026-10-01",
 				"remarks": "Call before delivery",
 				"company": "Company",
@@ -226,6 +227,7 @@ class TestHalaBooking(IntegrationTestCase):
 		self.assertEqual(result["paid_amount"], 500)
 		self.assertEqual(result["remaining_amount"], 500)
 		self.assertEqual(result["notes"], "Call before delivery")
+		self.assertEqual(result["posting_time"], "14:30:00")
 		self.assertEqual(result["items"][0]["description"], "وصف خاص بالحجز")
 
 	@patch("erpnext.accounts.utils.reconcile_against_document")

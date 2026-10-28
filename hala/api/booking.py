@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
-from frappe.utils import cint, flt, nowdate
+from frappe.utils import cint, flt, nowdate, nowtime
 
 from hala.access import require_portal_access
 from hala.api.pos_pricing import resolve_effective_price_list
@@ -228,6 +228,7 @@ def _summary(doc):
 		"customer": doc.customer,
 		"posting_date": doc.posting_date,
 		"delivery_date": doc.get("custom_delivery_date"),
+		"posting_time": str(doc.get("posting_time") or "").split(".", 1)[0],
 		"booking_status": doc.get("custom_booking_status") or DEFAULT_BOOKING_STATUS,
 		"notes": doc.get("remarks") or "",
 		"company": doc.company,
@@ -280,6 +281,7 @@ def get_booking(name=None, company=None):
 		"customer": None,
 		"posting_date": nowdate(),
 		"delivery_date": nowdate(),
+		"posting_time": nowtime().split(".", 1)[0],
 		"booking_status": DEFAULT_BOOKING_STATUS,
 		"notes": "",
 		"company": company,
@@ -354,6 +356,8 @@ def save_booking(booking):
 	doc.customer = data["customer"]
 	doc.posting_date = data.get("posting_date") or nowdate()
 	doc.custom_delivery_date = data.get("delivery_date") or doc.posting_date
+	doc.set_posting_time = 1
+	doc.posting_time = data.get("posting_time") or doc.get("posting_time") or nowtime()
 	doc.remarks = data.get("notes") or ""
 	doc.custom_is_booking = 1
 	booking_status = data.get("booking_status") or DEFAULT_BOOKING_STATUS

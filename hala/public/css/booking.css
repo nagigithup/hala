@@ -15,8 +15,8 @@ body.hala-booking-embedded .layout-main-section-wrapper {
 
 .hala-booking-fields {
 	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	gap: 12px 18px;
+	grid-template-columns: minmax(0, 1.25fr) repeat(4, minmax(0, 1fr));
+	gap: 12px 12px;
 }
 
 .hala-booking-fields .frappe-control,

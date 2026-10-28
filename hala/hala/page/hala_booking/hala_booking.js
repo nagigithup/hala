@@ -51,6 +51,7 @@ class HalaBookingPage {
 						<div data-field="customer"></div>
 						<div data-field="posting_date"></div>
 						<div data-field="delivery_date"></div>
+						<div data-field="posting_time"></div>
 						<div data-field="booking_status"></div>
 					</div>
 				</section>
@@ -135,6 +136,7 @@ class HalaBookingPage {
 			customer: {fieldtype: "Link", label: __("Customer"), options: "Customer", reqd: 1},
 			posting_date: {fieldtype: "Date", label: __("Date"), reqd: 1},
 			delivery_date: {fieldtype: "Date", label: __("Delivery Date"), reqd: 1},
+			posting_time: {fieldtype: "Time", label: __("Delivery Time"), reqd: 1},
 			booking_status: {
 				fieldtype: "Select",
 				label: __("Booking Status"),
@@ -205,6 +207,7 @@ class HalaBookingPage {
 		await this.controls.customer.set_value(booking.customer || "");
 		await this.controls.posting_date.set_value(booking.posting_date || frappe.datetime.get_today());
 		await this.controls.delivery_date.set_value(booking.delivery_date || frappe.datetime.get_today());
+		await this.controls.posting_time.set_value(booking.posting_time || "00:00:00");
 		await this.controls.booking_status.set_value(booking.booking_status || "تحت التجهيز");
 		await this.controls.notes.set_value(booking.notes || "");
 		for (const control of Object.values(this.controls)) {
@@ -402,6 +405,7 @@ class HalaBookingPage {
 			customer: this.controls.customer.get_value(),
 			posting_date: this.controls.posting_date.get_value(),
 			delivery_date: this.controls.delivery_date.get_value(),
+			posting_time: this.controls.posting_time.get_value(),
 			booking_status: this.controls.booking_status.get_value(),
 			notes: this.controls.notes.get_value(),
 			items: this.rows
