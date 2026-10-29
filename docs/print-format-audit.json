@@ -1,0 +1,864 @@
+{
+  "audit_date": "2026-10-29",
+  "site": "tag.localhost",
+  "cloud_verified": false,
+  "expected_count_in_request": 23,
+  "actual_formats_audited": 74,
+  "sales_invoice_formats": 15,
+  "custom_sales_invoice_formats": 4,
+  "counts_after_cleanup": {
+    "total": 73,
+    "sales_invoice": 14,
+    "custom_sales_invoice": 3,
+    "protected_formats_unchanged": 70
+  },
+  "removed_obsolete_formats": ["فاتورة مبيعات A$"],
+  "validation": {
+    "post_cleanup_migrations": 2,
+    "protected_format_hashes_unchanged": 70,
+    "required_html_css_matches_live_site": true,
+    "cashier_and_ownership_unit_tests": "passed",
+    "cleanup_safety_unit_tests": "passed",
+    "three_live_format_renders": "passed",
+    "exact_cashier_example_and_historical_user_independence": "passed",
+    "browser_qz_dispatch_regressions": "passed with mocked printer dispatch",
+    "physical_printer_output_verified": false,
+    "deleted_document_recovery_record_retained": true
+  },
+  "files_changed": {
+    "hala": [
+      "docs/print-format-audit.json", "hala/fixtures/print_format.json", "hala/hooks.py",
+      "hala/print_format_cleanup.py", "hala/tests/test_print_format_cleanup.py",
+      "hala/tests/test_print_format_sources.py"
+    ],
+    "pos_next": [
+      "pos_next/fixtures/print_format.json", "pos_next/hooks.py",
+      "pos_next/pos_next/utils/print_cashier.py", "pos_next/pos_next/utils/tests/test_print_cashier.py",
+      "pos_next/pos_next/utils/tests/test_print_format_sources.py",
+      "pos_next/pos_next/print_format/pos_next_receipt/pos_next_receipt.json (deleted duplicate)"
+    ]
+  },
+  "deployment_note": "Deploy the matching POS Next update before Hala, then migrate. Cloud deployment and physical printer checks still require verification. Earlier local booking/history/UI edits are not part of these print-format commits.",
+  "cleanup_policy": "Explicit user approval; exact name, Sales Invoice DocType, non-standard Accounts module, empty CSS and audited HTML SHA-256 required. Changed, core, other-DocType or referenced formats are preserved. Runs after install and each migration; normal Frappe deletion retains its recovery record.",
+  "authoritative_ownership": {
+    "POS Next Receipt": "pos_next/pos_next/fixtures/print_format.json",
+    "BOOKING": "hala/hala/fixtures/print_format.json",
+    "فاتورة مبيعات A4": "hala/hala/fixtures/print_format.json"
+  },
+  "reappearance_findings": [
+    "ERPNext and KSA Compliance standard formats are imported by Frappe model synchronization from their module JSON files; deleting site records does not remove those protected deployment sources.",
+    "POS Next Receipt had two deployment sources in POS Next: its fixture and module JSON. The redundant module JSON was removed; the fixture is authoritative.",
+    "No obsolete custom Sales Invoice format was found in the current Hala or POS Next fixtures, setup/install hooks or patches.",
+    "The site-only A$ variant has no deployment source in these apps. Its template differs from the original A4 only in two header fields (Due Date/Currency versus Delivery Date/Delivery Time)."
+  ],
+  "formats": [
+    {
+      "name": "Accounts Payable Standard",
+      "doc_type": null,
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/accounts_payable_standard/accounts_payable_standard.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Accounts Payable Summary Standard",
+      "doc_type": null,
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/accounts_payable_summary_standard/accounts_payable_summary_standard.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Accounts Receivable Standard",
+      "doc_type": null,
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/accounts_receivable_standard/accounts_receivable_standard.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Accounts Receivable Summary Standard",
+      "doc_type": null,
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/accounts_receivable_summary_standard/accounts_receivable_summary_standard.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Balance Sheet Standard",
+      "doc_type": null,
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/balance_sheet_standard/balance_sheet_standard.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Bank and Cash Payment Voucher",
+      "doc_type": "Payment Entry",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/bank_and_cash_payment_voucher/bank_and_cash_payment_voucher.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "BOOKING",
+      "doc_type": "Sales Invoice",
+      "module": "Hala",
+      "standard": "No",
+      "disabled": 0,
+      "deployment_sources": [
+        "hala/hala/fixtures/print_format.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Cash Flow Statement Standard",
+      "doc_type": null,
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/cash_flow_statement_standard/cash_flow_statement_standard.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Cheque Printing Format",
+      "doc_type": "Journal Entry",
+      "module": null,
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/cheque_printing_format/cheque_printing_format.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Credit Note",
+      "doc_type": "Journal Entry",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/credit_note/credit_note.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Delivery Note Bordered",
+      "doc_type": "Delivery Note",
+      "module": "Stock",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/stock/print_format/delivery_note_bordered/delivery_note_bordered.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Delivery Note Classic",
+      "doc_type": "Delivery Note",
+      "module": "Stock",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/stock/print_format/delivery_note_classic/delivery_note_classic.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Delivery Note Modern",
+      "doc_type": "Delivery Note",
+      "module": "Stock",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/stock/print_format/delivery_note_modern/delivery_note_modern.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Delivery Note Modern with Images",
+      "doc_type": "Delivery Note",
+      "module": "Stock",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/stock/print_format/delivery_note_modern_with_images/delivery_note_modern_with_images.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Detailed Tax Invoice",
+      "doc_type": "Sales Invoice",
+      "module": "Regional",
+      "standard": "Yes",
+      "disabled": 1,
+      "deployment_sources": [
+        "erpnext/erpnext/regional/print_format/detailed_tax_invoice/detailed_tax_invoice.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Drop Shipping Format",
+      "doc_type": "Purchase Order",
+      "module": null,
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/buying/print_format/drop_shipping_format/drop_shipping_format.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Dunning Letter",
+      "doc_type": "Dunning",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/dunning_letter/dunning_letter.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "General Ledger Standard",
+      "doc_type": null,
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/general_ledger_standard/general_ledger_standard.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Hala Customer Receipt",
+      "doc_type": "Payment Entry",
+      "module": "Hala",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "hala/hala/hala/print_format/hala_customer_receipt/hala_customer_receipt.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Hala Deposit Receipt",
+      "doc_type": "Payment Entry",
+      "module": "Hala",
+      "standard": "No",
+      "disabled": 0,
+      "deployment_sources": [
+        "hala/hala/fixtures/print_format.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Hala POS Invoice",
+      "doc_type": "POS Invoice",
+      "module": "Hala",
+      "standard": "No",
+      "disabled": 0,
+      "deployment_sources": [],
+      "decision": "retain"
+    },
+    {
+      "name": "IRS 1099 Form",
+      "doc_type": "Supplier",
+      "module": "Regional",
+      "standard": "No",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/regional/print_format/irs_1099_form/irs_1099_form.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Journal Auditing Voucher",
+      "doc_type": "Journal Entry",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/journal_auditing_voucher/journal_auditing_voucher.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "P&L Statement Standard",
+      "doc_type": null,
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/p&l_statement_standard/p&l_statement_standard.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Payment Receipt Voucher",
+      "doc_type": "Journal Entry",
+      "module": null,
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/payment_receipt_voucher/payment_receipt_voucher.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "payment recive",
+      "doc_type": "Payment Entry",
+      "module": "Accounts",
+      "standard": "No",
+      "disabled": 0,
+      "deployment_sources": [
+        "hala/hala/fixtures/print_format.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Pick List",
+      "doc_type": "Pick List",
+      "module": "Stock",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/stock/print_format/pick_list/pick_list.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "POS Invoice",
+      "doc_type": "POS Invoice",
+      "module": "Selling",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/selling/print_format/pos_invoice/pos_invoice.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "POS Invoice Bordered",
+      "doc_type": "POS Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/pos_invoice_bordered/pos_invoice_bordered.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "POS Invoice Classic",
+      "doc_type": "POS Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/pos_invoice_classic/pos_invoice_classic.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "POS Invoice Modern",
+      "doc_type": "POS Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/pos_invoice_modern/pos_invoice_modern.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "POS Invoice Modern with Images",
+      "doc_type": "POS Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/pos_invoice_modern_with_images/pos_invoice_modern_with_images.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "POS Next EOD Report",
+      "doc_type": "POS Closing Shift",
+      "module": "POS Next",
+      "standard": "No",
+      "disabled": 0,
+      "deployment_sources": [
+        "pos_next/pos_next/pos_next/print_format/pos_next_eod_report/pos_next_eod_report.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "POS Next Receipt",
+      "doc_type": "Sales Invoice",
+      "module": "POS Next",
+      "standard": "No",
+      "disabled": 0,
+      "deployment_sources": [
+        "pos_next/pos_next/fixtures/print_format.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "posnext",
+      "doc_type": "POS Invoice",
+      "module": "Accounts",
+      "standard": "No",
+      "disabled": 0,
+      "deployment_sources": [],
+      "decision": "retain"
+    },
+    {
+      "name": "Purchase Auditing Voucher",
+      "doc_type": "Purchase Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/purchase_auditing_voucher/purchase_auditing_voucher.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Purchase eInvoice",
+      "doc_type": "Purchase Invoice",
+      "module": "Regional",
+      "standard": "Yes",
+      "disabled": 1,
+      "deployment_sources": [
+        "erpnext/erpnext/regional/print_format/purchase_einvoice/purchase_einvoice.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Purchase Invoice Bordered",
+      "doc_type": "Purchase Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/purchase_invoice_bordered/purchase_invoice_bordered.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Purchase Invoice Classic",
+      "doc_type": "Purchase Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/purchase_invoice_classic/purchase_invoice_classic.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Purchase Invoice Modern",
+      "doc_type": "Purchase Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/purchase_invoice_modern/purchase_invoice_modern.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Purchase Invoice Modern with Images",
+      "doc_type": "Purchase Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/purchase_invoice_modern_with_images/purchase_invoice_modern_with_images.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Purchase Order Bordered",
+      "doc_type": "Purchase Order",
+      "module": "Buying",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/buying/print_format/purchase_order_bordered/purchase_order_bordered.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Purchase Order Classic",
+      "doc_type": "Purchase Order",
+      "module": "Buying",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/buying/print_format/purchase_order_classic/purchase_order_classic.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Purchase Order Modern",
+      "doc_type": "Purchase Order",
+      "module": "Buying",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/buying/print_format/purchase_order_modern/purchase_order_modern.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Purchase Order Modern with Images",
+      "doc_type": "Purchase Order",
+      "module": "Buying",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/buying/print_format/purchase_order_modern_with_images/purchase_order_modern_with_images.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Purchase Receipt Serial and Batch Bundle Print",
+      "doc_type": "Purchase Receipt",
+      "module": "Stock",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/stock/print_format/purchase_receipt_serial_and_batch_bundle_print/purchase_receipt_serial_and_batch_bundle_print.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Quotation Bordered",
+      "doc_type": "Quotation",
+      "module": "Selling",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/selling/print_format/quotation_bordered/quotation_bordered.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Quotation Classic",
+      "doc_type": "Quotation",
+      "module": "Selling",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/selling/print_format/quotation_classic/quotation_classic.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Quotation Modern",
+      "doc_type": "Quotation",
+      "module": "Selling",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/selling/print_format/quotation_modern/quotation_modern.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Quotation Modern with Images",
+      "doc_type": "Quotation",
+      "module": "Selling",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/selling/print_format/quotation_modern_with_images/quotation_modern_with_images.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Request for Quotation Bordered",
+      "doc_type": "Request for Quotation",
+      "module": "Buying",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/buying/print_format/request_for_quotation_bordered/request_for_quotation_bordered.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Request for Quotation Classic",
+      "doc_type": "Request for Quotation",
+      "module": "Buying",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/buying/print_format/request_for_quotation_classic/request_for_quotation_classic.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Request for Quotation Modern",
+      "doc_type": "Request for Quotation",
+      "module": "Buying",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/buying/print_format/request_for_quotation_modern/request_for_quotation_modern.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Request for Quotation Modern with Images",
+      "doc_type": "Request for Quotation",
+      "module": "Buying",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/buying/print_format/request_for_quotation_modern_with_images/request_for_quotation_modern_with_images.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Return POS Invoice",
+      "doc_type": "POS Invoice",
+      "module": "Selling",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/selling/print_format/return_pos_invoice/return_pos_invoice.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Sales Auditing Voucher",
+      "doc_type": "Sales Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/sales_auditing_voucher/sales_auditing_voucher.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Sales Invoice Bordered",
+      "doc_type": "Sales Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/sales_invoice_bordered/sales_invoice_bordered.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Sales Invoice Classic",
+      "doc_type": "Sales Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/sales_invoice_classic/sales_invoice_classic.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Sales Invoice Modern",
+      "doc_type": "Sales Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/sales_invoice_modern/sales_invoice_modern.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Sales Invoice Modern with Images",
+      "doc_type": "Sales Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/sales_invoice_modern_with_images/sales_invoice_modern_with_images.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Sales Invoice Return",
+      "doc_type": "Sales Invoice",
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/sales_invoice_return/sales_invoice_return.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Sales Order Bordered",
+      "doc_type": "Sales Order",
+      "module": "Selling",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/selling/print_format/sales_order_bordered/sales_order_bordered.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Sales Order Classic",
+      "doc_type": "Sales Order",
+      "module": "Selling",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/selling/print_format/sales_order_classic/sales_order_classic.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Sales Order Modern",
+      "doc_type": "Sales Order",
+      "module": "Selling",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/selling/print_format/sales_order_modern/sales_order_modern.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Sales Order Modern with Images",
+      "doc_type": "Sales Order",
+      "module": "Selling",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/selling/print_format/sales_order_modern_with_images/sales_order_modern_with_images.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Simplified Tax Invoice",
+      "doc_type": "Sales Invoice",
+      "module": "Regional",
+      "standard": "Yes",
+      "disabled": 1,
+      "deployment_sources": [
+        "erpnext/erpnext/regional/print_format/simplified_tax_invoice/simplified_tax_invoice.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Tax Invoice",
+      "doc_type": "Sales Invoice",
+      "module": "Regional",
+      "standard": "Yes",
+      "disabled": 1,
+      "deployment_sources": [
+        "erpnext/erpnext/regional/print_format/tax_invoice/tax_invoice.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "Trial Balance Standard",
+      "doc_type": null,
+      "module": "Accounts",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "erpnext/erpnext/accounts/print_format/trial_balance_standard/trial_balance_standard.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "ZATCA Phase 1 Print Format",
+      "doc_type": "Sales Invoice",
+      "module": "KSA Compliance",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "ksa_compliance/ksa_compliance/ksa_compliance/print_format/zatca_phase_1_print_format/zatca_phase_1_print_format.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "ZATCA Phase 1 Print Format - POS Invoice",
+      "doc_type": "POS Invoice",
+      "module": "KSA Compliance",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "ksa_compliance/ksa_compliance/ksa_compliance/print_format/zatca_phase_1_print_format___pos_invoice/zatca_phase_1_print_format___pos_invoice.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "ZATCA Phase 2 Print Format",
+      "doc_type": "Sales Invoice",
+      "module": "KSA Compliance",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "ksa_compliance/ksa_compliance/ksa_compliance/print_format/zatca_phase_2_print_format/zatca_phase_2_print_format.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "ZATCA Phase 2 Print Format - POS Invoice",
+      "doc_type": "POS Invoice",
+      "module": "KSA Compliance",
+      "standard": "Yes",
+      "disabled": 0,
+      "deployment_sources": [
+        "ksa_compliance/ksa_compliance/ksa_compliance/print_format/zatca_phase_2_print_format___pos_invoice/zatca_phase_2_print_format___pos_invoice.json"
+      ],
+      "decision": "retain"
+    },
+    {
+      "name": "فاتورة مبيعات A$",
+      "doc_type": "Sales Invoice",
+      "module": "Accounts",
+      "standard": "No",
+      "disabled": 0,
+      "deployment_sources": [],
+      "decision": "remove-explicitly-approved-older-A4-variant"
+    },
+    {
+      "name": "فاتورة مبيعات A4",
+      "doc_type": "Sales Invoice",
+      "module": "Accounts",
+      "standard": "No",
+      "disabled": 0,
+      "deployment_sources": [
+        "hala/hala/fixtures/print_format.json"
+      ],
+      "decision": "retain"
+    }
+  ]
+}

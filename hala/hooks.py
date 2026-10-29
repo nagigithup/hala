@@ -5,7 +5,7 @@ app_description = "Modern ERPNext business portal for Hala Shop"
 app_email = "admin@example.com"
 app_license = "mit"
 
-required_apps = ["erpnext"]
+required_apps = ["erpnext", "pos_next"]
 
 app_include_css = [
 	"/assets/hala/css/cashier_layout.css",
@@ -31,8 +31,8 @@ add_to_apps_screen = [
 	}
 ]
 
-after_install = "hala.setup.after_install"
-after_migrate = "hala.setup.after_migrate"
+after_install = ["hala.setup.after_install", "hala.print_format_cleanup.cleanup_legacy_sales_invoice_formats"]
+after_migrate = ["hala.setup.after_migrate", "hala.print_format_cleanup.cleanup_legacy_sales_invoice_formats"]
 
 doctype_js = {
 	"BOM": "public/js/bom.js",
