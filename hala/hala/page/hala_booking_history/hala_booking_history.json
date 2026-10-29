@@ -1,0 +1,15 @@
+{
+ "doctype": "Page",
+ "module": "Hala",
+ "name": "hala-booking-history",
+ "page_name": "hala-booking-history",
+ "roles": [
+  {"role": "System Manager"}, {"role": "Accounts User"},
+  {"role": "Accounts Manager"}, {"role": "Sales User"},
+  {"role": "Sales Manager"}, {"role": "POSNext Cashier"},
+  {"role": "Cashier"}, {"role": "Hala Portal User"}
+ ],
+ "standard": "Yes",
+ "system_page": 0,
+ "title": "سجل فواتير الحجز"
+}

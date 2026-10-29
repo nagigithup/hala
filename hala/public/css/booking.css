@@ -13,6 +13,22 @@ body.hala-booking-embedded .layout-main-section-wrapper {
 	min-height: 100vh;
 }
 
+.hala-history-tools {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin: 16px 0;
+}
+
+.hala-history-tools input { flex: 1; min-width: 220px; }
+.hala-history-tools select { width: auto; min-width: 120px; }
+.hala-history-table td { vertical-align: middle; white-space: nowrap; }
+.hala-history-table [data-history-booking] { cursor: pointer; }
+.hala-history-table [data-history-booking]:hover { background: var(--subtle-fg); }
+.hala-history-value { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text-color); }
+[data-history-detail][hidden] { display: none !important; }
+
 .hala-booking-fields {
 	display: grid;
 	grid-template-columns: minmax(0, 1.25fr) repeat(4, minmax(0, 1fr));

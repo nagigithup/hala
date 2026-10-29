@@ -36,11 +36,15 @@ after_migrate = ["hala.setup.after_migrate", "hala.print_format_cleanup.cleanup_
 
 doctype_js = {
 	"BOM": "public/js/bom.js",
+	"Sales Invoice": "public/js/sales_invoice.js",
 }
 
 doc_events = {
 	"Sales Invoice": {
-		"before_validate": "hala.cashier_profile.enforce_transaction_cashier_profile",
+		"before_validate": [
+			"hala.cashier_profile.enforce_transaction_cashier_profile",
+			"hala.api.booking_history.preserve_booking_origin",
+		],
 		"before_submit": "hala.api.sales_invoice.validate_cash_only_customer_payment",
 		"on_submit": "hala.api.booking.allocate_booking_advances",
 		"before_trash": "hala.api.booking.prevent_booking_deletion_with_payments",

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import frappe
 from frappe import _
-from frappe.utils import cint, flt, nowdate, nowtime
+from frappe.utils import cint, flt, now_datetime, nowdate, nowtime
 
 from hala.access import require_portal_access
 from hala.api.pos_pricing import resolve_effective_price_list
@@ -501,6 +501,10 @@ def finalize_booking(booking_name):
 	# POS Next's existing credit-sale validation flag allows a POS invoice with
 	# no payment rows. It does not create a payment or customer credit balance.
 	doc.flags.pos_next_credit_sale = 1
+	confirmed_at = now_datetime()
+	doc.set_posting_time = 1
+	doc.posting_date = confirmed_at.date()
+	doc.posting_time = confirmed_at.time()
 	doc.submit()
 	doc.reload()
 	return _summary(doc)

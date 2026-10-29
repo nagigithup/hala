@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import frappe
 from frappe.tests import IntegrationTestCase
+from frappe.utils import add_days, now_datetime
 
 from hala.api.booking import (
 	_apply_standard_sales_tax_defaults,
@@ -168,6 +169,12 @@ class TestHalaBooking(IntegrationTestCase):
 		doc.customer = "Customer"
 		doc.grand_total = 100
 		doc.company = "Company"
+		created_at = now_datetime()
+		doc.creation = add_days(created_at, -4)
+		doc.posting_date = doc.creation.date()
+		doc.posting_time = "00:00:00"
+		doc.custom_delivery_date = add_days(created_at.date(), 2)
+		original_dates = (doc.creation, doc.custom_delivery_date)
 		doc.get.side_effect = lambda key: {
 			"items": [frappe._dict({"qty": 1})],
 		}.get(key)
@@ -177,6 +184,18 @@ class TestHalaBooking(IntegrationTestCase):
 			"pos_profile": frappe._dict({"name": "Main POS", "company": "Company"}),
 		}
 
+		def check_confirmation_timestamp():
+			confirmed_at = now_datetime()
+			self.assertEqual(doc.name, "SINV-BOOKING")
+			self.assertEqual(doc.set_posting_time, 1)
+			self.assertEqual(doc.posting_date, confirmed_at.date())
+			self.assertLessEqual(
+				abs((confirmed_at - confirmed_at.combine(doc.posting_date, doc.posting_time)).total_seconds()),
+				5,
+			)
+			self.assertEqual((doc.creation, doc.custom_delivery_date), original_dates)
+
+		doc.submit.side_effect = check_confirmation_timestamp
 		finalize_booking(doc.name)
 
 		self.assertEqual(doc.custom_booking_status, COMPLETED_BOOKING_STATUS)

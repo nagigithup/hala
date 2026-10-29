@@ -163,7 +163,7 @@ def _get_rows(transactions):
 
 def _get_columns():
 	return [
-		{"label": _("Posting Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 105},
+		{"label": _("Manufacturing Date"), "fieldname": "posting_date", "fieldtype": "Date", "width": 105},
 		{"label": _("Posting Time"), "fieldname": "posting_time", "fieldtype": "Time", "width": 95},
 		{
 			"label": _("Stock Entry"),

@@ -103,6 +103,7 @@
 
 		const job = (async () => {
 			const iframe = createPrintFrame();
+			if (options.paperWidth) iframe.style.width = options.paperWidth;
 			let cleanupTimer;
 			let cleaned = false;
 			const cleanup = () => {
@@ -136,13 +137,17 @@
 				}
 
 				await waitForAssets(frameDocument);
+				cooldowns.set(key, Date.now() + DOUBLE_PRINT_COOLDOWN_MS);
+				if (options.beforePrint && await options.beforePrint(frameDocument)) {
+					cleanup();
+					return true;
+				}
 				frameWindow.addEventListener(
 					"afterprint",
 					() => window.setTimeout(cleanup, 1000),
 					{once: true}
 				);
 				cleanupTimer = window.setTimeout(cleanup, CLEANUP_TIMEOUT_MS);
-				cooldowns.set(key, Date.now() + DOUBLE_PRINT_COOLDOWN_MS);
 				frameWindow.focus();
 				frameWindow.print();
 				return true;

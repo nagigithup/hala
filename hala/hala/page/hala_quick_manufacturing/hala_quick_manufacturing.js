@@ -115,7 +115,7 @@ class HalaQuickManufacturing {
 			get_query: () => ({filters: {company: this.company, is_group: 0, disabled: 0}}),
 		});
 		this.make_control("posting_date", {
-			fieldtype: "Date", label: __("Posting Date"), reqd: 1, default: frappe.datetime.get_today(),
+			fieldtype: "Date", label: __("Manufacturing Date"), reqd: 1, default: frappe.datetime.get_today(),
 		});
 		this.make_control("posting_time", {
 			fieldtype: "Time", label: __("Posting Time"), reqd: 1, default: this.current_time(),

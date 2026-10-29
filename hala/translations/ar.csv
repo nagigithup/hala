@@ -121,7 +121,8 @@ Manufacturing Quantity,كمية التصنيع
 Finished Item UOM,وحدة المنتج النهائي
 Source Warehouse,مستودع المواد الخام
 Target Warehouse,مستودع المنتج النهائي
-Posting Date,تاريخ التصنيع
+Manufacturing Date,تاريخ التصنيع
+Invoice Date,تاريخ الفاتورة
 Posting Time,وقت التصنيع
 Remarks,ملاحظات
 Open BOM,فتح قائمة المواد

@@ -31,6 +31,26 @@ def ensure_booking_fields():
 					"no_copy": 1,
 				},
 				{
+					"fieldname": "custom_hala_booking_origin",
+					"label": "Hala Booking Origin",
+					"fieldtype": "Check",
+					"default": "0",
+					"read_only": 1,
+					"hidden": 1,
+					"no_copy": 1,
+					"search_index": 1,
+					"insert_after": "custom_is_booking",
+				},
+				{
+					"fieldname": "custom_booking_delivery_time",
+					"label": "Booking Delivery Time",
+					"fieldtype": "Time",
+					"read_only": 1,
+					"hidden": 1,
+					"no_copy": 1,
+					"insert_after": "custom_delivery_date",
+				},
+				{
 					"fieldname": "custom_delivery_date",
 					"label": "Delivery Date",
 					"fieldtype": "Date",
@@ -192,9 +212,13 @@ def after_install():
 	ensure_role()
 	ensure_booking_fields()
 	ensure_cash_only_customer_field()
+	from hala.api.booking_history import backfill_booking_origins
+	backfill_booking_origins()
 
 
 def after_migrate():
 	ensure_role()
 	ensure_booking_fields()
 	ensure_cash_only_customer_field()
+	from hala.api.booking_history import backfill_booking_origins
+	backfill_booking_origins()

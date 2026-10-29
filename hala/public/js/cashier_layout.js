@@ -21,6 +21,13 @@
 			href: "/desk/hala-receipt",
 			route: ["hala-receipt"],
 		},
+		{
+			id: "booking-history",
+			label: "سجل فواتير الحجز",
+			icon: "clock",
+			href: "/desk/hala-booking-history",
+			route: ["hala-booking-history"],
+		},
 	];
 
 	function navigation_item(item, active) {
