@@ -12,7 +12,7 @@ app_include_css = [
 	"/assets/hala/css/general_ledger.css",
 ]
 app_include_js = [
-	"/assets/hala/js/cashier_layout.js",
+	"cashier_layout.bundle.js",
 	"/assets/hala/js/general_ledger.js",
 ]
 
