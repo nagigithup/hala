@@ -125,6 +125,7 @@ fixtures = [
 					"BOOKING",
 					"Hala Deposit Receipt",
 					"payment recive",
+					"فاتورة مبيعات A4",
 				],
 			]
 		],
