@@ -27,7 +27,7 @@ window.frappe = {
 		calls.push({method, args});
 		if (method.endsWith("get_history")) return {message: {rows: [record], has_more: true}};
 		if (method.endsWith("get_details")) return {message: {...record}};
-		if (method.endsWith("get_print_options")) return {message: {name: args.name, docstatus: record.docstatus, print_format: "Configured Receipt", a4_available: true}};
+		if (method.endsWith("get_print_options")) return {message: {name: args.name, docstatus: record.docstatus, print_format: "BOOKING", a4_available: true}};
 		throw Error("Unexpected API: " + method);
 	},
 };
@@ -48,10 +48,11 @@ assert.equal($("[data-history-detail] [data-action='save'], [data-history-detail
 assert.equal($("[data-history-detail] input, [data-history-detail] textarea, [data-history-detail] select").length, 0);
 assert.equal($("[data-history-detail] [data-history-print]").length, 2);
 let printed;
-window.halaBookingPOSPrint = async (...args) => {printed = args;};
+window.halaSmartPrint = async (...args) => {printed = args;};
 await page.print_history("pos");
-assert.equal(printed[0], "BOOK-1");
-assert.equal(printed[1], "Configured Receipt");
+assert.deepEqual(printed, ["Sales Invoice", "BOOK-1", "BOOKING"]);
+await page.print_sales_invoice({...record, docstatus: 1});
+assert.deepEqual(printed, ["Sales Invoice", "BOOK-1", "POS Next Receipt"]);
 page.open_a4_print = name => {printed = name;};
 await page.print_history("a4");
 assert.equal(printed, "BOOK-1");
@@ -88,6 +89,6 @@ pending.FIRST({message: {...record, name: "FIRST"}}); await first;
 assert.equal(page.booking.name, "SECOND");
 window.frappe.call = regularCall;
 await page.print_history("pos");
-assert.equal(printed[0], "SECOND");
-console.log("PASS: row-cell selection, visible loading/error/retry, stale-response rejection, static read-only preview, dynamic configured POS format, A4 selected invoice, no mutation APIs, pagination/search and escaped text.");
+assert.deepEqual(printed, ["Sales Invoice", "SECOND", "BOOKING"]);
+console.log("PASS: row-cell selection, visible loading/error/retry, stale-response rejection, static read-only preview, explicit BOOKING and POS Next Receipt kiosk formats, A4 selected invoice, no mutation APIs, pagination/search and escaped text.");
 window.close();

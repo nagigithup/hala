@@ -5,7 +5,7 @@ from frappe import _
 from frappe.utils import cint, flt
 
 from hala.access import require_portal_access
-from hala.api.booking import _active_shift, _booking_payments, _paid_in_invoice_currency, _summary, _get_default_sales_invoice_print_format
+from hala.api.booking import _active_shift, _booking_payments, _paid_in_invoice_currency, _summary
 from hala.cashier_profile import is_cashier_isolation_user, validate_cashier_document
 
 
@@ -116,11 +116,14 @@ def get_details(name):
 def get_print_options(name):
 	doc = _authorized_booking(name)
 	doc.check_permission("print")
-	print_format = _get_default_sales_invoice_print_format()
-	if print_format != "Standard" and not frappe.db.exists("Print Format", {
+	print_format = "BOOKING" if doc.docstatus == 0 else "POS Next Receipt"
+	if not frappe.db.exists("Print Format", {
 		"name": print_format, "doc_type": "Sales Invoice", "disabled": 0,
 	}):
-		print_format = "Standard"
+		frappe.throw(
+			_("Print Format {0} does not exist.").format(print_format),
+			frappe.DoesNotExistError,
+		)
 	return {"name": doc.name, "docstatus": doc.docstatus, "pos_profile": doc.pos_profile,
 		"print_format": print_format, "a4_available": bool(frappe.db.exists("Print Format", {
 			"name": "فاتورة مبيعات A4", "doc_type": "Sales Invoice", "disabled": 0,

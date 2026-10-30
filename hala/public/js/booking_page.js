@@ -512,9 +512,7 @@ window.HalaBookingPage = class HalaBookingPage {
 		if (!booking?.name || Number(booking.docstatus) !== 1) return;
 		try {
 			await this.printer;
-			this.receipt_printer ||= frappe.require("booking_pos_print.bundle.js");
-			await this.receipt_printer;
-			return await window.halaBookingPOSPrint(booking.name);
+			return await window.halaSmartPrint("Sales Invoice", booking.name, "POS Next Receipt");
 		} catch (error) {
 			console.warn("Sales Invoice printing was unavailable:", error);
 		}
@@ -524,11 +522,6 @@ window.HalaBookingPage = class HalaBookingPage {
 		if (!this.booking?.name || Number(this.booking.docstatus) !== 0) return;
 		try {
 			await this.printer;
-			if (this.history) {
-				this.receipt_printer ||= frappe.require("booking_pos_print.bundle.js");
-				await this.receipt_printer;
-				return await window.halaBookingPOSPrint(this.booking.name, "BOOKING");
-			}
 			return await window.halaSmartPrint("Sales Invoice", this.booking.name, "BOOKING");
 		} catch (error) {
 			console.warn("Booking printing was unavailable:", error);
@@ -709,9 +702,7 @@ window.HalaBookingPage = class HalaBookingPage {
 				return this.open_a4_print(selected.name);
 			}
 			await this.printer;
-			this.receipt_printer ||= frappe.require("booking_pos_print.bundle.js");
-			await this.receipt_printer;
-			return await window.halaBookingPOSPrint(selected.name, options.print_format || "Standard", {invoice: options});
+			return await window.halaSmartPrint("Sales Invoice", selected.name, options.print_format);
 		} catch (error) {
 			frappe.msgprint({title: "تعذر طباعة الفاتورة", message: frappe.utils.escape_html(error?.message || "تحقق من الصلاحيات وإعدادات الطباعة ثم أعد المحاولة."), indicator: "red"});
 		} finally {

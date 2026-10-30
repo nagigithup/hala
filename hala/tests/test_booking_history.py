@@ -8,25 +8,25 @@ from hala.api.booking_history import _payment_totals, get_details, get_history, 
 
 class TestBookingHistory(IntegrationTestCase):
 	@patch("hala.api.booking_history.frappe.db.exists", return_value=True)
-	@patch("hala.api.booking_history._get_default_sales_invoice_print_format", return_value="My Configured Format")
 	@patch("hala.api.booking_history._authorized_booking")
-	def test_print_options_use_configured_format_and_require_print_permission(self, authorized, default_format, exists):
+	def test_submitted_print_options_use_pos_receipt_and_require_print_permission(self, authorized, exists):
 		doc = MagicMock(name="BOOK", docstatus=1, pos_profile="Profile")
 		doc.name = "BOOK"
 		authorized.return_value = doc
 		options = get_print_options("BOOK")
 		self.assertEqual(options["name"], "BOOK")
-		self.assertEqual(options["print_format"], "My Configured Format")
+		self.assertEqual(options["print_format"], "POS Next Receipt")
 		doc.check_permission.assert_called_once_with("print")
 		authorized.assert_called_once_with("BOOK")
 
-	@patch("hala.api.booking_history.frappe.db.exists", return_value=False)
-	@patch("hala.api.booking_history._get_default_sales_invoice_print_format", return_value="Missing Format")
+	@patch("hala.api.booking_history.frappe.db.exists", return_value=True)
 	@patch("hala.api.booking_history._authorized_booking")
-	def test_missing_default_uses_standard_and_reports_missing_a4(self, authorized, default_format, exists):
+	def test_draft_print_options_use_booking_receipt(self, authorized, exists):
+		doc = MagicMock(name="BOOK", docstatus=0, pos_profile="Profile")
+		doc.name = "BOOK"
+		authorized.return_value = doc
 		options = get_print_options("BOOK")
-		self.assertEqual(options["print_format"], "Standard")
-		self.assertFalse(options["a4_available"])
+		self.assertEqual(options["print_format"], "BOOKING")
 
 	@patch("hala.api.booking_history._booking_payments", return_value=[frappe._dict(paid_amount=25)])
 	def test_draft_payments_use_submitted_booking_advances(self, payments):
