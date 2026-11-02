@@ -1,4 +1,22 @@
 Items,الأصناف
+Supplier Payment,دفعة للمورد
+Invoice Grand Total,إجمالي الفاتورة
+Actual Amount Paid to Supplier,المبلغ الفعلي المدفوع للمورد
+Amount Allocated to Invoice,المبلغ المخصص للفاتورة
+Supplier Advance / Credit,رصيد مقدم للمورد
+Available Supplier Advance,الرصيد المقدم للمورد
+Supplier Unallocated Payments,دفعات المورد غير المخصصة
+Retry Previous Payment,إعادة محاولة الدفعة السابقة
+Submit Payment,تأكيد الدفعة
+The previous supplier payment completed. Record another payment?,تمت الدفعة السابقة للمورد. هل تريد تسجيل دفعة أخرى؟
+Only the outstanding amount is allocated. Any excess remains an unallocated supplier advance.,يخصص للفاتورة المبلغ المستحق فقط ويبقى المبلغ الزائد رصيداً مقدماً للمورد.
+"Invoice settlement only. For the full cash/bank outflow and supplier advances, submit the invoice and use Supplier Payment.",هذا المبلغ لتسوية الفاتورة فقط. لتسجيل المبلغ الفعلي والرصيد المقدم للمورد اعتمد الفاتورة ثم استخدم دفعة للمورد.
+"Submit the invoice, then use Supplier Payment to record the actual amount paid. Existing advances can be applied explicitly with Get Advances.",اعتمد الفاتورة ثم استخدم دفعة للمورد لتسجيل المبلغ الفعلي. يمكن تخصيص الأرصدة السابقة باستخدام جلب الدفعات المقدمة.
+Use Payment Reconciliation to apply existing supplier advances. No credit is consumed automatically by Supplier Payment.,استخدم تسوية الدفعات لتخصيص أرصدة المورد السابقة. لا تستخدم دفعة للمورد الأرصدة السابقة تلقائياً.
+Payment was not confirmed. Retry this payment or review Payment Entries before starting another payment.,لم يتم تأكيد الدفعة. أعد محاولة هذه الدفعة أو راجع قيود الدفع قبل تسجيل دفعة أخرى.
+A previous payment request is pending. Retry it to check its result without creating a duplicate.,يوجد طلب دفع سابق قيد التحقق. أعد محاولته للتحقق من نتيجته دون إنشاء دفعة مكررة.
+Unable to prepare this payment. Check the account or use Create > Payment.,تعذر تجهيز الدفعة. تحقق من الحساب أو استخدم إنشاء > دفعة.
+Unable to load supplier advances. Standard invoice and payment actions remain available.,تعذر تحميل أرصدة المورد المقدمة. تظل إجراءات الفاتورة والدفع المعتادة متاحة.
 Customers,العملاء
 Suppliers,الموردون
 Purchasing,المشتريات

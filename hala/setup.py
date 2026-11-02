@@ -208,10 +208,43 @@ def ensure_cash_only_customer_field():
 	)
 
 
+def ensure_supplier_payment_fields():
+	"""Payment provenance only; balances remain owned by ERPNext's ledgers."""
+	create_custom_fields(
+		{
+			"Payment Entry": [
+				{
+					"fieldname": "custom_hala_purchase_invoice",
+					"label": "Hala Purchase Invoice",
+					"fieldtype": "Link",
+					"options": "Purchase Invoice",
+					"insert_after": "reference_date",
+					"read_only": 1,
+					"no_copy": 1,
+					"search_index": 1,
+				},
+				{
+					"fieldname": "custom_hala_supplier_payment_request_id",
+					"label": "Hala Supplier Payment Request ID",
+					"fieldtype": "Data",
+					"insert_after": "custom_hala_purchase_invoice",
+					"read_only": 1,
+					"hidden": 1,
+					"no_copy": 1,
+					"unique": 1,
+					"length": 80,
+				},
+			],
+		},
+		update=True,
+	)
+
+
 def after_install():
 	ensure_role()
 	ensure_booking_fields()
 	ensure_cash_only_customer_field()
+	ensure_supplier_payment_fields()
 	from hala.api.booking_history import backfill_booking_origins
 	backfill_booking_origins()
 
@@ -220,5 +253,6 @@ def after_migrate():
 	ensure_role()
 	ensure_booking_fields()
 	ensure_cash_only_customer_field()
+	ensure_supplier_payment_fields()
 	from hala.api.booking_history import backfill_booking_origins
 	backfill_booking_origins()

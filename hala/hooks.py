@@ -36,6 +36,7 @@ after_migrate = ["hala.setup.after_migrate", "hala.print_format_cleanup.cleanup_
 
 doctype_js = {
 	"BOM": "public/js/bom.js",
+	"Purchase Invoice": "public/js/purchase_invoice.js",
 	"Sales Invoice": "public/js/sales_invoice.js",
 }
 
