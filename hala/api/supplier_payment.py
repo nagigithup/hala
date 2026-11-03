@@ -1,13 +1,14 @@
 """Standard Purchase Invoice payments, including unallocated supplier advances.
 
-The invoice is submitted through ERPNext before this workflow starts. No invoice
-payment fields are rewritten; Payment Entry owns the cash outflow and allocation.
+Payment Entry owns the cash outflow and allocation. Draft over-tender is kept
+separately from native invoice settlement and posted only on confirmation.
 """
 
 from __future__ import annotations
 
 import math
 import re
+from hashlib import sha256
 
 import frappe
 from frappe import _
@@ -16,6 +17,72 @@ from frappe.utils import flt, getdate, nowdate
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from erpnext.accounts.party import get_party_account
 from erpnext.controllers.accounts_controller import get_advance_payment_entries
+
+
+def prepare_inline_payment(doc, method=None):
+	"""Capture over-tender before ERPNext validates native invoice settlement.
+
+	Saving a draft stores intent only. Never cap a native payment and silently
+	lose the excess; the complete amount will be posted by a Payment Entry.
+	"""
+	if doc.docstatus != 0 and doc.get("_action") != "submit":
+		return
+	total = flt(doc.rounded_total or doc.grand_total)
+	if doc.is_paid and not doc.is_return and total > 0 and flt(doc.paid_amount) > total:
+		doc.custom_hala_supplier_payment = 1
+		doc.custom_hala_actual_supplier_payment = doc.paid_amount
+		doc.custom_hala_supplier_payment_account = doc.cash_bank_account
+	if doc.get("custom_hala_supplier_payment"):
+		if doc.is_return:
+			frappe.throw(_("Use the standard Payment Entry workflow for a return invoice."))
+		doc.is_paid = 0
+		doc.paid_amount = 0
+		doc.base_paid_amount = 0
+
+
+def validate_inline_payment(doc, method=None):
+	if not doc.get("custom_hala_supplier_payment"):
+		return
+	amount = _number(doc.get("custom_hala_actual_supplier_payment"), _("Actual Amount Paid to Supplier"))
+	if amount <= 0:
+		frappe.throw(_("Actual Amount Paid to Supplier must be greater than zero."))
+	if amount != flt(amount, doc.precision("custom_hala_actual_supplier_payment")):
+		frappe.throw(_("Actual payment has more decimal places than the account currency permits."))
+	if not doc.get("custom_hala_supplier_payment_account"):
+		frappe.throw(_("Cash/Bank Account is required for Supplier Payment."))
+	account = frappe.get_doc("Account", doc.custom_hala_supplier_payment_account)
+	account.check_permission("read")
+	if account.company != doc.company or account.is_group or account.disabled or account.account_type not in ("Cash", "Bank"):
+		frappe.throw(_("Select an enabled cash or bank account in the invoice company."))
+	# The inline amount is in invoice currency. Cross-currency payment remains
+	# available in the existing post-submission dialog with an explicit rate quote.
+	if account.account_currency != doc.currency or doc.party_account_currency != doc.currency:
+		frappe.throw(_("For different invoice, bank or payable currencies, turn off Supplier Payment on Submit and use Create > Supplier Payment after submitting."))
+	if account.account_type == "Bank" and not doc.get("custom_hala_supplier_payment_reference"):
+		frappe.throw(_("Reference No is required for a bank payment."))
+
+
+def submit_inline_payment(doc, method=None):
+	"""Run after standard invoice GL posting, in the same request transaction."""
+	if not doc.get("custom_hala_supplier_payment"):
+		return
+	request_id = "hala-pi-" + sha256(doc.name.encode()).hexdigest()[:40]
+	quote = {"outstanding": 0, "source_exchange_rate": 1, "target_exchange_rate": 1}
+	if not frappe.db.exists("Payment Entry", {"custom_hala_supplier_payment_request_id": request_id}):
+		current = _invoice(doc.name)
+		quote = _quote(current, _payment_template(current, doc.custom_hala_supplier_payment_account))
+	pay_supplier(
+		invoice=doc.name, actual_amount=doc.custom_hala_actual_supplier_payment,
+		bank_account=doc.custom_hala_supplier_payment_account, request_id=request_id,
+		expected_outstanding=quote["outstanding"], source_exchange_rate=quote["source_exchange_rate"],
+		target_exchange_rate=quote["target_exchange_rate"],
+		reference_no=doc.get("custom_hala_supplier_payment_reference"),
+		reference_date=doc.get("custom_hala_supplier_payment_date"),
+	)
+	# Return the status calculated by ERPNext's Payment Entry, rather than the
+	# stale pre-payment balance in the submission response.
+	for field in ("outstanding_amount", "status"):
+		doc.set(field, frappe.db.get_value("Purchase Invoice", doc.name, field))
 
 
 def _invoice(name):

@@ -41,6 +41,11 @@ doctype_js = {
 }
 
 doc_events = {
+	"Purchase Invoice": {
+		"before_validate": "hala.api.supplier_payment.prepare_inline_payment",
+		"before_submit": "hala.api.supplier_payment.validate_inline_payment",
+		"on_submit": "hala.api.supplier_payment.submit_inline_payment",
+	},
 	"Sales Invoice": {
 		"before_validate": [
 			"hala.cashier_profile.enforce_transaction_cashier_profile",

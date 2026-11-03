@@ -37,7 +37,11 @@ class Dialog {
 }
 const frm = {
 	doc: { name: "PINV-TEST", docstatus: 1, paid_amount: 0 }, buttons: new Map(),
-	is_new: () => false, set_df_property() {}, reload_doc() {},
+	is_new: () => false, set_df_property() {}, reload_doc() {}, refresh_fields() {},
+	async set_value(values) {
+		Object.assign(this.doc, values);
+		for (const name of Object.keys(values)) if (handlers[name]) await handlers[name](this);
+	},
 	add_custom_button(label, callback) { this.buttons.set(label, callback); },
 	dashboard: {
 		parent: $("#dashboard"), add_section() { return $("<div class='hala-supplier-payments'/>").appendTo("#dashboard"); },
@@ -124,4 +128,23 @@ assert.equal(window.localStorage.length, 0);
 assert.equal(dialog.fields_dict.actual_amount.df.read_only, 0);
 assert.equal(frm.doc.paid_amount, 0);
 
-console.log("PASS: read-only calculated fields, allocations, duplicate click, persistent recovery after refresh, server-error correction, no invoice payment-field writes.");
+// The original draft Paid Amount workflow must route over-tender into a
+// separately persisted payment intent before save/submit reaches ERPNext.
+frm.doc = { name: "DRAFT-TEST", docstatus: 0, grand_total: 89.82, paid_amount: 90,
+	is_paid: 1, cash_bank_account: "Cash", currency: "SAR" };
+frm.fields_dict = { custom_hala_supplier_payment_preview: { $wrapper: $("<div/>") } };
+await handlers.paid_amount(frm);
+assert.equal(frm.doc.custom_hala_supplier_payment, 1);
+assert.equal(frm.doc.custom_hala_actual_supplier_payment, 90);
+assert.equal(frm.doc.custom_hala_supplier_payment_account, "Cash");
+assert.equal(frm.doc.is_paid, 0);
+assert.equal(frm.doc.paid_amount, 0);
+assert.match(frm.fields_dict.custom_hala_supplier_payment_preview.$wrapper.text(), /0.18/);
+frm.doc.custom_hala_supplier_payment = 0;
+frm.doc.is_paid = 1;
+frm.doc.paid_amount = 100;
+await handlers.validate(frm);
+assert.equal(frm.doc.custom_hala_actual_supplier_payment, 100);
+assert.equal(frm.doc.paid_amount, 0);
+
+console.log("PASS: draft overpayment capture before save/submit, read-only calculations, duplicate click, persistent recovery after refresh, server-error correction, separate actual cash and native invoice settlement.");

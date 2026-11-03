@@ -210,9 +210,65 @@ class TestSupplierPayment(unittest.TestCase):
 			get_context(invoice.name, self.company.default_cash_account)
 		invoice.is_paid = 1
 		invoice.cash_bank_account = self.company.default_cash_account
-		invoice.paid_amount = 100
-		with self.assertRaisesRegex(frappe.ValidationError, "Paid amount.*Write Off Amount"):
-			invoice.save()
+		invoice.paid_amount = 87.50
+		invoice.save()
+		self.assertEqual(invoice.is_paid, 1)
+		self.assertEqual(invoice.paid_amount, 87.50)
+		self.assertFalse(invoice.get("custom_hala_supplier_payment"))
+
+	def test_native_draft_overpayment_is_captured_then_posted_on_submit(self):
+		invoice = self.invoice(89.82, submit=False)
+		invoice.is_paid = 1
+		invoice.cash_bank_account = self.company.default_cash_account
+		invoice.paid_amount = 90
+		invoice.save()
+		self.assertEqual(invoice.custom_hala_actual_supplier_payment, 90)
+		self.assertEqual(invoice.custom_hala_supplier_payment, 1)
+		self.assertEqual(invoice.is_paid, 0)
+		self.assertEqual(invoice.paid_amount, 0)
+		self.assertFalse(frappe.db.exists("Payment Entry", {"custom_hala_purchase_invoice": invoice.name}))
+		invoice.submit()
+		pe = frappe.get_doc("Payment Entry", frappe.db.get_value("Payment Entry", {"custom_hala_purchase_invoice": invoice.name}, "name"))
+		self.assertEqual(pe.paid_amount, 90)
+		self.assertEqual(pe.total_allocated_amount, 89.82)
+		self.assertEqual(pe.unallocated_amount, 0.18)
+		invoice.reload()
+		self.assertEqual(invoice.outstanding_amount, 0)
+		from hala.api.supplier_payment import submit_inline_payment
+		submit_inline_payment(invoice)
+		self.assertEqual(frappe.db.count("Payment Entry", {"custom_hala_purchase_invoice": invoice.name}), 1)
+
+	def test_inline_payment_submits_atomically_for_full_and_partial_payments(self):
+		for total, actual, advance, outstanding in ((87.5, 100, 12.5, 0), (100, 100, 0, 0), (100, 50, 0, 50), (100, 150, 50, 0)):
+			with self.subTest(total=total, actual=actual):
+				invoice = self.invoice(total, submit=False)
+				invoice.custom_hala_supplier_payment = 1
+				invoice.custom_hala_actual_supplier_payment = actual
+				invoice.custom_hala_supplier_payment_account = self.company.default_cash_account
+				invoice.save()
+				invoice.submit()
+				invoice.reload()
+				pe = frappe.get_doc("Payment Entry", frappe.db.get_value("Payment Entry", {"custom_hala_purchase_invoice": invoice.name}, "name"))
+				self.assertEqual(pe.unallocated_amount, advance)
+				self.assertEqual(invoice.outstanding_amount, outstanding)
+				self.assertEqual(invoice.paid_amount, 0)
+				self.assert_ledger(pe, actual)
+
+	def test_inline_submit_failure_rolls_back_invoice_and_payment(self):
+		invoice = self.invoice(87.5, submit=False)
+		invoice.custom_hala_supplier_payment = 1
+		invoice.custom_hala_actual_supplier_payment = 100
+		invoice.custom_hala_supplier_payment_account = self.company.default_cash_account
+		invoice.save()
+		frappe.db.savepoint("inline_supplier_failure")
+		with patch("erpnext.accounts.doctype.payment_entry.payment_entry.PaymentEntry.on_submit", side_effect=frappe.ValidationError("Test payment failure")):
+			with self.assertRaises(frappe.ValidationError):
+				invoice.submit()
+		frappe.db.rollback(save_point="inline_supplier_failure")
+		invoice.reload()
+		self.assertEqual(invoice.docstatus, 0)
+		self.assertFalse(frappe.db.exists("Payment Entry", {"custom_hala_purchase_invoice": invoice.name}))
+		self.assertFalse(frappe.db.exists("GL Entry", {"voucher_type": "Purchase Invoice", "voucher_no": invoice.name}))
 
 	def test_company_account_and_permissions_remain_enforced(self):
 		invoice = self.invoice(100)

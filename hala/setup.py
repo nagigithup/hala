@@ -212,6 +212,57 @@ def ensure_supplier_payment_fields():
 	"""Payment provenance only; balances remain owned by ERPNext's ledgers."""
 	create_custom_fields(
 		{
+			"Purchase Invoice": [
+				{
+					"fieldname": "custom_hala_supplier_payment",
+					"label": "Supplier Payment on Submit",
+					"fieldtype": "Check", "default": "0", "no_copy": 1,
+					"insert_after": "is_paid",
+					"description": "Record the actual supplier payment with a Payment Entry when submitting this invoice.",
+				},
+				{
+					"fieldname": "custom_hala_supplier_payment_section",
+					"label": "Supplier Payment", "fieldtype": "Section Break",
+					"insert_after": "supplier_invoice_details",
+					"depends_on": "custom_hala_supplier_payment",
+				},
+				{
+					"fieldname": "custom_hala_actual_supplier_payment",
+					"label": "Actual Amount Paid to Supplier", "fieldtype": "Currency",
+					"options": "currency", "no_copy": 1,
+					"insert_after": "custom_hala_supplier_payment_section",
+				},
+				{
+					"fieldname": "custom_hala_supplier_payment_account_column",
+					"fieldtype": "Column Break",
+					"insert_after": "custom_hala_actual_supplier_payment",
+				},
+				{
+					"fieldname": "custom_hala_supplier_payment_account",
+					"label": "Cash/Bank Account", "fieldtype": "Link", "options": "Account",
+					"no_copy": 1, "insert_after": "custom_hala_supplier_payment_account_column",
+				},
+				{
+					"fieldname": "custom_hala_supplier_payment_reference",
+					"label": "Reference No", "fieldtype": "Data", "no_copy": 1,
+					"insert_after": "custom_hala_supplier_payment_account",
+				},
+				{
+					"fieldname": "custom_hala_supplier_payment_date",
+					"label": "Reference Date", "fieldtype": "Date", "no_copy": 1,
+					"insert_after": "custom_hala_supplier_payment_reference",
+				},
+				{
+					"fieldname": "custom_hala_supplier_payment_summary_column",
+					"fieldtype": "Column Break",
+					"insert_after": "custom_hala_supplier_payment_date",
+				},
+				{
+					"fieldname": "custom_hala_supplier_payment_preview",
+					"label": "Supplier Payment Summary", "fieldtype": "HTML",
+					"insert_after": "custom_hala_supplier_payment_summary_column",
+				},
+			],
 			"Payment Entry": [
 				{
 					"fieldname": "custom_hala_purchase_invoice",

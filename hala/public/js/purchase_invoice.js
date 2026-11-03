@@ -7,6 +7,55 @@
 	const read_intent = (invoice) => JSON.parse(localStorage.getItem(storage_key(invoice)) || "null");
 	const save_intent = (invoice, intent) => localStorage.setItem(storage_key(invoice), JSON.stringify(intent));
 
+	function inline_preview(frm) {
+		const enabled = !!frm.doc.custom_hala_supplier_payment;
+		frm.set_df_property("is_paid", "read_only", enabled ? 1 : 0);
+		const wrapper = frm.fields_dict?.custom_hala_supplier_payment_preview?.$wrapper;
+		if (!wrapper) return;
+		wrapper.empty();
+		if (!enabled) return;
+		const total = flt(frm.doc.rounded_total || frm.doc.grand_total);
+		const due = Math.max(total - flt(frm.doc.total_advance) - flt(frm.doc.write_off_amount), 0);
+		const amount = Math.max(flt(frm.doc.custom_hala_actual_supplier_payment), 0);
+		for (const [label, value] of [
+			["Invoice Grand Total", frm.doc.grand_total],
+			["Amount Allocated to Invoice", Math.min(due, amount)],
+			["Supplier Advance / Credit", Math.max(amount - due, 0)],
+		]) {
+			$("<p></p>").text(__(label) + ": " + format_currency(value, frm.doc.currency)).appendTo(wrapper);
+		}
+		$("<p class='text-muted small'></p>").text(__("Saving a draft does not post a payment. Submitting creates the supplier Payment Entry; any excess remains an advance.")).appendTo(wrapper);
+	}
+
+	async function enable_inline_payment(frm) {
+		if (frm.doc.docstatus !== 0 || !frm.doc.custom_hala_supplier_payment) {
+			inline_preview(frm);
+			return;
+		}
+		const values = { is_paid: 0, paid_amount: 0, base_paid_amount: 0 };
+		if (!frm.doc.custom_hala_actual_supplier_payment && frm.doc.is_paid) {
+			values.custom_hala_actual_supplier_payment = frm.doc.paid_amount;
+		}
+		if (!frm.doc.custom_hala_supplier_payment_account && frm.doc.cash_bank_account) {
+			values.custom_hala_supplier_payment_account = frm.doc.cash_bank_account;
+		}
+		await frm.set_value(values);
+		frm.refresh_fields();
+		inline_preview(frm);
+	}
+
+	async function route_overpayment(frm) {
+		const total = flt(frm.doc.rounded_total || frm.doc.grand_total);
+		if (frm.doc.docstatus !== 0 || !frm.doc.is_paid || frm.doc.is_return || total <= 0 || flt(frm.doc.paid_amount) <= total) return;
+		const amount = frm.doc.paid_amount;
+		await frm.set_value({
+			custom_hala_actual_supplier_payment: amount,
+			custom_hala_supplier_payment_account: frm.doc.cash_bank_account,
+			custom_hala_supplier_payment: 1,
+		});
+		await enable_inline_payment(frm);
+	}
+
 	function completed(frm, result) {
 		frappe.msgprint({
 			title: __("Supplier Payment"),
@@ -167,7 +216,24 @@
 	}
 
 	frappe.ui.form.on("Purchase Invoice", {
+		setup(frm) {
+			frm.set_query("custom_hala_supplier_payment_account", () => ({ filters: {
+				company: frm.doc.company, account_type: ["in", ["Cash", "Bank"]],
+				account_currency: frm.doc.currency, is_group: 0, disabled: 0,
+			} }));
+		},
+		paid_amount: route_overpayment,
+		async validate(frm) {
+			await route_overpayment(frm);
+			await enable_inline_payment(frm);
+		},
+		custom_hala_supplier_payment: enable_inline_payment,
+		custom_hala_actual_supplier_payment: inline_preview,
+		grand_total: inline_preview,
+		total_advance: inline_preview,
+		write_off_amount: inline_preview,
 		async refresh(frm) {
+			inline_preview(frm);
 			frm.set_df_property("paid_amount", "description", __("Invoice settlement only. For the full cash/bank outflow and supplier advances, submit the invoice and use Supplier Payment."));
 			if (frm.is_new() || frm.doc.docstatus === 2 || frm.doc.is_return) return;
 			const invoice = frm.doc.name;

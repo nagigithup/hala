@@ -1,5 +1,9 @@
 Items,الأصناف
 Supplier Payment,دفعة للمورد
+Supplier Payment on Submit,دفع المورد عند اعتماد الفاتورة
+Supplier Payment Summary,ملخص دفعة المورد
+Record the actual supplier payment with a Payment Entry when submitting this invoice.,يسجل المبلغ الفعلي المدفوع للمورد بقيد دفع عند اعتماد هذه الفاتورة.
+Saving a draft does not post a payment. Submitting creates the supplier Payment Entry; any excess remains an advance.,حفظ المسودة لا يسجل دفعة. عند الاعتماد ينشأ قيد دفع للمورد ويبقى المبلغ الزائد رصيداً مقدماً.
 Invoice Grand Total,إجمالي الفاتورة
 Actual Amount Paid to Supplier,المبلغ الفعلي المدفوع للمورد
 Amount Allocated to Invoice,المبلغ المخصص للفاتورة

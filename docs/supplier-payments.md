@@ -7,10 +7,23 @@ write-off above its rounded/grand total. That field represents settlement inside
 the invoice, not all cash handed to the supplier. The local Purchase Invoice has
 no Client Script or Server Script overriding this behavior.
 
-Use the normal Purchase Invoice submission, then **Create > Supplier Payment**
-(**إنشاء > دفعة للمورد**). For an invoice paid entirely through this action, leave
-the invoice's **Is Paid** unchecked. Existing standard inline invoice payments
-remain supported. The new action pays only the balance still outstanding.
+For a draft invoice, an overpayment typed into the native **Paid Amount** field
+automatically enables **Supplier Payment on Submit / دفع المورد عند اعتماد الفاتورة**.
+The full amount moves into **Actual Amount Paid to Supplier**, alongside its cash/
+bank account. Native **Is Paid / Paid Amount** are cleared so ERPNext does not post
+the same money inside the invoice. The standard validation remains intact.
+
+Saving stores the payment instruction only. Submitting posts the normal invoice,
+then its supplier Payment Entry in the same transaction. A payment failure rolls
+the entire submission back. The checkbox can also be enabled explicitly for exact
+or partial payments. A read-only summary shows total, allocation and excess.
+The payment section uses three standard responsive form columns: actual amount;
+cash/bank account and references; payment summary.
+
+An already submitted invoice can still use **Create > Supplier Payment**
+(**إنشاء > دفعة للمورد**). Existing standard native payments within the invoice's
+permissible total remain supported. Additional payments allocate only the remaining
+outstanding amount.
 
 The dialog shows the read-only invoice total, editable actual bank/cash outflow,
 read-only allocation, and read-only excess supplier advance. Currency labels
@@ -20,11 +33,15 @@ exchange rates. A changed balance/rate requires reopening and reviewing the quot
 A normal **Pay / Supplier Payment Entry** is inserted and submitted in one request
 transaction with normal permissions and validations. Only the invoice's remaining
 balance is allocated; the full payment leaves the cash/bank account. There is no
-write-off, artificial journal, or modification to invoice `paid_amount`.
+write-off or artificial journal. In separate-payment mode, invoice `paid_amount`
+is zero: cash outflow is accounted for entirely by Payment Entry.
 
 Invoices with withholding taxes or generated payment deductions/discounts retain
 the full standard **Create > Payment** editor so their accounting can be reviewed.
 Held invoices and returns cannot use the new action.
+The inline amount requires matching invoice, cash/bank and payable currencies.
+Cross-currency payments use the existing post-submission dialog with its explicit
+rate quote. Bank payments require a genuine reference number.
 
 ## Accounting example
 
@@ -60,9 +77,10 @@ Standard cancellation/reconciliation controls the ledger and remaining advance.
 
 ## Files
 
-- `hala/hooks.py`: Purchase Invoice form script registration only.
-- `hala/setup.py`: two provenance/idempotency Custom Fields on Payment Entry,
-  installed by existing install/migrate hooks; no balance field or new DocType.
+- `hala/hooks.py`: Purchase Invoice form script and draft/submit event hooks only.
+- `hala/setup.py`: two provenance/idempotency Custom Fields on Payment Entry and
+  nine fields for Purchase Invoice payment intent, references and UI, installed
+  by existing install/migrate hooks; no supplier balance field or new DocType.
 - `hala/api/supplier_payment.py`: authorized context/advance lookup and payment API.
 - `hala/public/js/purchase_invoice.js`: standard form dashboard and payment dialog.
 - `hala/translations/ar.csv`: Arabic labels and dialog guidance.
@@ -72,7 +90,7 @@ Standard cancellation/reconciliation controls the ledger and remaining advance.
 
 ## Local validation
 
-All 10 accounting integration tests and the simulated dialog tests pass. All test
+All 13 accounting integration tests and the simulated form/dialog tests pass. All test
 invoices, suppliers, items, payments and ledger entries are rolled back.
 Tests use the current server date; the foreign-currency test fixes only its exchange
 rate for deterministic accounting assertions.
@@ -91,8 +109,16 @@ rate for deterministic accounting assertions.
 - A submit failure rolls back the payment and leaves invoice outstanding unchanged.
 - A VAT-bearing invoice keeps its net total, VAT, grand total and original GL
   postings unchanged after the overpayment.
+- Draft 89.82 / payment 90 saves without posting cash, then submission allocates
+  89.82 and leaves 0.18. Duplicate hook execution creates no second Payment Entry.
+- A supplier payment failure during invoice submission rolls both documents and
+  the invoice GL back; the invoice remains draft.
+- On ACC-PINV-2026-00170 itself, the standard validation methods accept an
+  in-memory payment of 90 after routing it to separate payment intent. This check
+  does not save or submit the actual invoice or create its payment.
 - Frontend checks cover read-only derived fields, double clicks, reload recovery,
-  validation-error correction and absence of writes to invoice payment fields.
+  validation-error correction, draft overpayment capture and separation of actual
+  cash from native invoice settlement.
 - Existing POS Next cash tender/change regression passes. Two existing closing
   tests have outdated summary fixtures (missing newer reporting totals); their
   cash/change assertions are also checked with complete summary fixtures in the
