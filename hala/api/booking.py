@@ -62,12 +62,14 @@ def _booking_payments(name, for_update=False):
 	lock = " FOR UPDATE" if for_update else ""
 	return frappe.db.sql(
 		f"""
-			SELECT name, paid_amount, base_paid_amount, unallocated_amount,
+			SELECT name, payment_type,
+			       CASE WHEN payment_type='Pay' THEN -paid_amount ELSE paid_amount END AS paid_amount,
+			       CASE WHEN payment_type='Pay' THEN -base_paid_amount ELSE base_paid_amount END AS base_paid_amount, unallocated_amount,
 			       paid_from, source_exchange_rate
 			FROM `tabPayment Entry`
 			WHERE custom_booking_invoice = %s
 			  AND docstatus = 1
-			  AND payment_type = 'Receive'
+			  AND payment_type IN ('Receive', 'Pay')
 			ORDER BY creation, name{lock}
 		""",
 		(name,),
@@ -185,11 +187,13 @@ def get_open_bookings():
 
 	payment_rows = frappe.db.sql(
 		"""
-			SELECT custom_booking_invoice, paid_amount, base_paid_amount
+			SELECT custom_booking_invoice,
+			       CASE WHEN payment_type='Pay' THEN -paid_amount ELSE paid_amount END AS paid_amount,
+			       CASE WHEN payment_type='Pay' THEN -base_paid_amount ELSE base_paid_amount END AS base_paid_amount
 			FROM `tabPayment Entry`
 			WHERE custom_booking_invoice IN %(bookings)s
 			  AND docstatus = 1
-			  AND payment_type = 'Receive'
+			  AND payment_type IN ('Receive', 'Pay')
 		""",
 		{"bookings": tuple(row.name for row in bookings)},
 		as_dict=True,
@@ -520,6 +524,8 @@ def allocate_booking_advances(doc, method=None):
 	outstanding = flt(doc.outstanding_amount)
 	entries = []
 	for payment in _booking_payments(doc.name, for_update=True):
+		if payment.get("payment_type") == "Pay":
+			continue
 		available = flt(payment.unallocated_amount)
 		allocated = min(available, outstanding)
 		if allocated <= 0:

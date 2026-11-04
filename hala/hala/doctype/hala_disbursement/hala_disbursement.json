@@ -1,0 +1,198 @@
+{
+ "doctype": "DocType",
+ "name": "Hala Disbursement",
+ "module": "Hala",
+ "autoname": "format:HALA-DISB-{YYYY}-{#####}",
+ "track_changes": 1,
+ "fields": [
+  {
+   "fieldname": "request_id",
+   "label": "Request ID",
+   "fieldtype": "Data",
+   "unique": 1,
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "kind",
+   "label": "نوع الصرف",
+   "fieldtype": "Select",
+   "options": "رد مبلغ لعميل\nدفع لمورد\nسلف موظفين\nمصروفات عامة",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "company",
+   "label": "Company",
+   "fieldtype": "Link",
+   "options": "Company",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "posting_date",
+   "label": "Date",
+   "fieldtype": "Date",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "currency",
+   "label": "Currency",
+   "fieldtype": "Link",
+   "options": "Currency",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "amount",
+   "label": "Amount",
+   "fieldtype": "Currency",
+   "options": "currency",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "beneficiary",
+   "label": "Beneficiary",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "party",
+   "label": "Party",
+   "fieldtype": "Data",
+   "read_only": 1
+  },
+  {
+   "fieldname": "description",
+   "label": "Description",
+   "fieldtype": "Small Text",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_doctype",
+   "label": "Source Type",
+   "fieldtype": "Link",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_name",
+   "label": "Source",
+   "fieldtype": "Dynamic Link",
+   "options": "source_doctype",
+   "read_only": 1
+  },
+  {
+   "fieldname": "expense_category",
+   "label": "Expense Category",
+   "fieldtype": "Link",
+   "options": "Hala Expense Category",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_account",
+   "label": "Payment Account",
+   "fieldtype": "Link",
+   "options": "Account",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "mode_of_payment",
+   "label": "Mode of Payment",
+   "fieldtype": "Link",
+   "options": "Mode of Payment",
+   "reqd": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "bank_reference",
+   "label": "Bank Reference",
+   "fieldtype": "Data",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pos_profile",
+   "label": "POS Profile",
+   "fieldtype": "Link",
+   "options": "POS Profile",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pos_opening_shift",
+   "label": "POS Opening Shift",
+   "fieldtype": "Link",
+   "options": "POS Opening Shift",
+   "read_only": 1
+  },
+  {
+   "fieldname": "cashier",
+   "label": "Cashier",
+   "fieldtype": "Link",
+   "options": "User",
+   "read_only": 1
+  },
+  {
+   "fieldname": "employee_advance",
+   "label": "Employee Advance",
+   "fieldtype": "Data",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_doctype",
+   "label": "Payment Type",
+   "fieldtype": "Link",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payment_name",
+   "label": "Payment",
+   "fieldtype": "Dynamic Link",
+   "options": "payment_doctype",
+   "read_only": 1
+  }
+ ],
+ "field_order": [
+  "request_id",
+  "kind",
+  "company",
+  "posting_date",
+  "currency",
+  "amount",
+  "beneficiary",
+  "party",
+  "description",
+  "source_doctype",
+  "source_name",
+  "expense_category",
+  "payment_account",
+  "mode_of_payment",
+  "bank_reference",
+  "pos_profile",
+  "pos_opening_shift",
+  "cashier",
+  "employee_advance",
+  "payment_doctype",
+  "payment_name"
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "print": 1
+  },
+  {
+   "role": "سند الصرف",
+   "read": 1,
+   "print": 1
+  }
+ ],
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "engine": "InnoDB"
+}

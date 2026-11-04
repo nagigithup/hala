@@ -1,4 +1,4 @@
-/* Supplier cash outflow belongs to Payment Entry, never invoice.paid_amount. */
+/* Separate supplier overpayments; Hala quick purchases retain native is_paid. */
 (() => {
 	const api = "hala.api.supplier_payment.";
 	const escape = frappe.utils.escape_html;
@@ -28,6 +28,7 @@
 	}
 
 	async function enable_inline_payment(frm) {
+		if (frm.doc.custom_hala_quick_purchase || (typeof window !== "undefined" && window.name === "hala-quick-purchase")) return;
 		if (frm.doc.docstatus !== 0 || !frm.doc.custom_hala_supplier_payment) {
 			inline_preview(frm);
 			return;
@@ -45,6 +46,7 @@
 	}
 
 	async function route_overpayment(frm) {
+		if (frm.doc.custom_hala_quick_purchase || (typeof window !== "undefined" && window.name === "hala-quick-purchase")) return;
 		const total = flt(frm.doc.rounded_total || frm.doc.grand_total);
 		if (frm.doc.docstatus !== 0 || !frm.doc.is_paid || frm.doc.is_return || total <= 0 || flt(frm.doc.paid_amount) <= total) return;
 		const amount = frm.doc.paid_amount;
@@ -264,3 +266,9 @@
 		},
 	});
 })();
+
+// The Booking purchase pane hosts this actual native form, with its controllers intact.
+if (typeof window !== "undefined" && (window.name === "hala-quick-purchase" || new URLSearchParams(window.location.search).get("hala_quick_purchase") === "1")) {
+	frappe.require(["/assets/hala/css/quick_purchase.css", "/assets/hala/js/quick_purchase_form.js"])
+		.then(() => window.halaQuickPurchase.mount(cur_frm));
+}

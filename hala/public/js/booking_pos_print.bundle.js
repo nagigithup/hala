@@ -27,15 +27,15 @@ import html2canvas from "../../../../pos_next/POS/node_modules/html2canvas/dist/
 	}
 
 	window.halaBookingPOSPrint = (name, printFormat = "POS Next Receipt", options = {}) => window.halaSmartPrint(
-		"Sales Invoice", name, printFormat, {
+		options.doctype || "Sales Invoice", name, printFormat, {
 			paperWidth: "80mm",
 			beforePrint: async (printDocument) => {
 				let qz, config, data;
 				try {
-					const doc = options.invoice || await call("frappe.client.get", {doctype: "Sales Invoice", name});
+					const doc = options.invoice || await call("frappe.client.get", {doctype: options.doctype || "Sales Invoice", name});
 					if (doc.name !== name || Number(doc.docstatus) !== (options.invoice ? Number(options.invoice.docstatus) : (printFormat === "BOOKING" ? 0 : 1))) throw new Error("Invoice status does not match the selected booking print format.");
 					const settings = await call("pos_next.pos_next.doctype.pos_settings.pos_settings.get_pos_settings", {
-						pos_profile: doc.pos_profile,
+						pos_profile: options.pos_profile || doc.pos_profile || doc.custom_cashier_profile,
 					});
 					if (!Number(settings?.silent_print)) return false;
 					qz = await getQZ();
@@ -67,6 +67,40 @@ import html2canvas from "../../../../pos_next/POS/node_modules/html2canvas/dist/
 				// A dispatch error may mean the printer already received the job.
 				// Let the caller report it; never send a second browser job here.
 				await qz.print(config, data);
+				return true;
+			},
+		}
+	);
+
+	// Purchase invoices keep their configured PDF paper and native print format.
+	window.halaNativePurchasePrint = (name, printFormat, options = {}) => window.halaSmartPrint(
+		"Purchase Invoice", name, printFormat, {
+			language: "ar", letterhead: options.letterhead,
+			beforePrint: async () => {
+				let bridge, config, data;
+				try {
+					const settings = await call("pos_next.pos_next.doctype.pos_settings.pos_settings.get_pos_settings", {pos_profile: options.pos_profile});
+					if (!Number(settings?.silent_print)) return false;
+					bridge = await getQZ();
+					if (!bridge.websocket.isActive()) await bridge.websocket.connect();
+					const saved = localStorage.getItem("hala_purchase_printer");
+					const printers = await bridge.printers.find();
+					const printer = saved && printers.includes(saved) ? saved : await bridge.printers.getDefault();
+					if (!printer) return false;
+					const params = new URLSearchParams({doctype: "Purchase Invoice", name, format: printFormat, _lang: "ar", no_letterhead: options.letterhead ? "0" : "1"});
+					if (options.letterhead) params.set("letterhead", options.letterhead);
+					const response = await fetch(`/api/method/frappe.utils.print_format.download_pdf?${params}`);
+					if (!response.ok || !response.headers.get("content-type")?.includes("application/pdf")) throw new Error("Native purchase PDF unavailable");
+					const bytes = new Uint8Array(await response.arrayBuffer());
+					let binary = "";
+					for (let offset = 0; offset < bytes.length; offset += 8192) binary += String.fromCharCode(...bytes.subarray(offset, offset + 8192));
+					config = bridge.configs.create(printer, {jobName: `Purchase Invoice ${name}`});
+					data = [{type: "pixel", format: "pdf", flavor: "base64", data: btoa(binary)}];
+				} catch (error) {
+					console.warn("Purchase PDF preparation unavailable; using native browser printing:", error);
+					return false;
+				}
+				await bridge.print(config, data); // Never issue a second job after ambiguous dispatch.
 				return true;
 			},
 		}

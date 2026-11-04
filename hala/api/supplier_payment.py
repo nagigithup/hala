@@ -25,6 +25,8 @@ def prepare_inline_payment(doc, method=None):
 	Saving a draft stores intent only. Never cap a native payment and silently
 	lose the excess; the complete amount will be posted by a Payment Entry.
 	"""
+	if doc.get("custom_hala_quick_purchase"):
+		return
 	if doc.docstatus != 0 and doc.get("_action") != "submit":
 		return
 	total = flt(doc.rounded_total or doc.grand_total)

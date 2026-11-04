@@ -6,13 +6,33 @@
  "name": "hala-booking",
  "page_name": "hala-booking",
  "roles": [
-  {"role": "System Manager"},
-  {"role": "Accounts User"},
-  {"role": "Accounts Manager"},
-  {"role": "Sales User"},
-  {"role": "Sales Manager"},
-  {"role": "POSNext Cashier"},
-  {"role": "Cashier"}
+  {
+   "role": "System Manager"
+  },
+  {
+   "role": "Accounts User"
+  },
+  {
+   "role": "Accounts Manager"
+  },
+  {
+   "role": "Sales User"
+  },
+  {
+   "role": "Sales Manager"
+  },
+  {
+   "role": "POSNext Cashier"
+  },
+  {
+   "role": "Cashier"
+  },
+  {
+   "role": "سند الصرف"
+  },
+  {
+   "role": "Purchase Manager"
+  }
  ],
  "script": null,
  "standard": "Yes",

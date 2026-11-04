@@ -1,0 +1,86 @@
+{
+ "doctype": "DocType",
+ "name": "Hala Expense Category",
+ "module": "Hala",
+ "autoname": "field:category_name",
+ "track_changes": 1,
+ "fields": [
+  {
+   "fieldname": "category_name",
+   "label": "Category",
+   "fieldtype": "Data",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "company",
+   "label": "Company",
+   "fieldtype": "Link",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "expense_account",
+   "label": "Expense Account",
+   "fieldtype": "Link",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "cost_center",
+   "label": "Cost Center",
+   "fieldtype": "Link",
+   "options": "Cost Center",
+   "reqd": 1
+  },
+  {
+   "fieldname": "enabled",
+   "label": "Approved for direct petty cash",
+   "fieldtype": "Check",
+   "default": "0"
+  },
+  {
+   "fieldname": "maximum_amount",
+   "label": "Maximum amount",
+   "fieldtype": "Currency",
+   "reqd": 1
+  },
+  {
+   "fieldname": "policy",
+   "label": "Accounting policy",
+   "fieldtype": "Small Text",
+   "reqd": 1,
+   "description": "Only direct petty-cash expenses without purchasing, inventory or tax requirements. Use Purchase Invoice for all other expenses."
+  }
+ ],
+ "field_order": [
+  "category_name",
+  "company",
+  "expense_account",
+  "cost_center",
+  "enabled",
+  "maximum_amount",
+  "policy"
+ ],
+ "permissions": [
+  {
+   "role": "Accounts Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  },
+  {
+   "role": "سند الصرف",
+   "read": 1
+  }
+ ],
+ "engine": "InnoDB"
+}

@@ -42,8 +42,15 @@ doctype_js = {
 
 doc_events = {
 	"Purchase Invoice": {
-		"before_validate": "hala.api.supplier_payment.prepare_inline_payment",
-		"before_submit": "hala.api.supplier_payment.validate_inline_payment",
+		"before_validate": [
+			"hala.api.quick_purchase.validate_native_form",
+			"hala.api.supplier_payment.prepare_inline_payment",
+		],
+		"validate": "hala.api.quick_purchase.validate_native_form",
+		"before_submit": [
+			"hala.api.quick_purchase.validate_native_form",
+			"hala.api.supplier_payment.validate_inline_payment",
+		],
 		"on_submit": "hala.api.supplier_payment.submit_inline_payment",
 	},
 	"Sales Invoice": {
@@ -55,19 +62,30 @@ doc_events = {
 		"on_submit": "hala.api.booking.allocate_booking_advances",
 		"before_trash": "hala.api.booking.prevent_booking_deletion_with_payments",
 	},
+	"Journal Entry": {
+		"validate": "hala.api.disbursement.validate_payment",
+		"before_submit": "hala.api.disbursement.validate_payment",
+	},
 	"Payment Entry": {
+		"validate": "hala.api.disbursement.validate_payment",
+		"before_submit": "hala.api.disbursement.validate_payment",
 		"before_validate": "hala.cashier_profile.enforce_transaction_cashier_profile",
-		"on_submit": "hala.api.deposit.sync_deposit_balance",
+		"on_submit": [
+			"hala.api.deposit.sync_deposit_balance",
+			"hala.api.disbursement.reconcile_customer_refund",
+		],
 		"on_cancel": "hala.api.deposit.sync_deposit_balance",
 	},
 }
 
 permission_query_conditions = {
+	"Hala Disbursement": "hala.api.disbursement.query_conditions",
 	"Sales Invoice": "hala.cashier_profile.sales_invoice_query_conditions",
 	"Payment Entry": "hala.cashier_profile.payment_entry_query_conditions",
 }
 
 has_permission = {
+	"Hala Disbursement": "hala.api.disbursement.has_permission",
 	"Sales Invoice": "hala.cashier_profile.has_transaction_permission",
 	"Payment Entry": "hala.cashier_profile.has_transaction_permission",
 }
@@ -141,3 +159,11 @@ fixtures = [
 		],
 	},
 ]
+
+# POS Next consumes only submitted cash journals through this optional adapter.
+pos_closing_cash_movements = [
+	"hala.api.disbursement.get_expense_cash_movements",
+	"hala.api.quick_purchase.get_purchase_cash_movements",
+]
+
+jinja = {"methods": ["hala.api.disbursement.disbursement_print_data"]}

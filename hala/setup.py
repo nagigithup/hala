@@ -216,20 +216,25 @@ def ensure_supplier_payment_fields():
 				{
 					"fieldname": "custom_hala_supplier_payment",
 					"label": "Supplier Payment on Submit",
-					"fieldtype": "Check", "default": "0", "no_copy": 1,
+					"fieldtype": "Check",
+					"default": "0",
+					"no_copy": 1,
 					"insert_after": "is_paid",
 					"description": "Record the actual supplier payment with a Payment Entry when submitting this invoice.",
 				},
 				{
 					"fieldname": "custom_hala_supplier_payment_section",
-					"label": "Supplier Payment", "fieldtype": "Section Break",
+					"label": "Supplier Payment",
+					"fieldtype": "Section Break",
 					"insert_after": "supplier_invoice_details",
 					"depends_on": "custom_hala_supplier_payment",
 				},
 				{
 					"fieldname": "custom_hala_actual_supplier_payment",
-					"label": "Actual Amount Paid to Supplier", "fieldtype": "Currency",
-					"options": "currency", "no_copy": 1,
+					"label": "Actual Amount Paid to Supplier",
+					"fieldtype": "Currency",
+					"options": "currency",
+					"no_copy": 1,
 					"insert_after": "custom_hala_supplier_payment_section",
 				},
 				{
@@ -239,17 +244,24 @@ def ensure_supplier_payment_fields():
 				},
 				{
 					"fieldname": "custom_hala_supplier_payment_account",
-					"label": "Cash/Bank Account", "fieldtype": "Link", "options": "Account",
-					"no_copy": 1, "insert_after": "custom_hala_supplier_payment_account_column",
+					"label": "Cash/Bank Account",
+					"fieldtype": "Link",
+					"options": "Account",
+					"no_copy": 1,
+					"insert_after": "custom_hala_supplier_payment_account_column",
 				},
 				{
 					"fieldname": "custom_hala_supplier_payment_reference",
-					"label": "Reference No", "fieldtype": "Data", "no_copy": 1,
+					"label": "Reference No",
+					"fieldtype": "Data",
+					"no_copy": 1,
 					"insert_after": "custom_hala_supplier_payment_account",
 				},
 				{
 					"fieldname": "custom_hala_supplier_payment_date",
-					"label": "Reference Date", "fieldtype": "Date", "no_copy": 1,
+					"label": "Reference Date",
+					"fieldtype": "Date",
+					"no_copy": 1,
 					"insert_after": "custom_hala_supplier_payment_reference",
 				},
 				{
@@ -259,7 +271,8 @@ def ensure_supplier_payment_fields():
 				},
 				{
 					"fieldname": "custom_hala_supplier_payment_preview",
-					"label": "Supplier Payment Summary", "fieldtype": "HTML",
+					"label": "Supplier Payment Summary",
+					"fieldtype": "HTML",
 					"insert_after": "custom_hala_supplier_payment_summary_column",
 				},
 			],
@@ -296,7 +309,10 @@ def after_install():
 	ensure_booking_fields()
 	ensure_cash_only_customer_field()
 	ensure_supplier_payment_fields()
+	ensure_disbursement_setup()
+	ensure_quick_purchase_fields()
 	from hala.api.booking_history import backfill_booking_origins
+
 	backfill_booking_origins()
 
 
@@ -305,5 +321,147 @@ def after_migrate():
 	ensure_booking_fields()
 	ensure_cash_only_customer_field()
 	ensure_supplier_payment_fields()
+	ensure_disbursement_setup()
+	ensure_quick_purchase_fields()
 	from hala.api.booking_history import backfill_booking_origins
+
 	backfill_booking_origins()
+
+
+def ensure_disbursement_setup():
+	"""Install the access marker and standard-document audit link, without business grants."""
+	if not frappe.db.exists("Role", "سند الصرف"):
+		frappe.get_doc({"doctype": "Role", "role_name": "سند الصرف", "desk_access": 1}).insert(
+			ignore_permissions=True
+		)
+	create_custom_fields(
+		{
+			doctype: [
+				{
+					"fieldname": "custom_hala_disbursement",
+					"label": "Hala Disbursement",
+					"fieldtype": "Link",
+					"options": "Hala Disbursement",
+					"read_only": 1,
+					"no_copy": 1,
+					"unique": 1,
+					"insert_after": "company",
+				}
+			]
+			for doctype in ("Payment Entry", "Journal Entry")
+		},
+		update=True,
+	)
+
+
+def install_disbursement():
+	"""Apply only Hala's disbursement schema/prints to an existing local site."""
+	if not frappe.db.exists("Role", "سند الصرف"):
+		frappe.get_doc({"doctype": "Role", "role_name": "سند الصرف", "desk_access": 1}).insert(
+			ignore_permissions=True
+		)
+	for name in ("hala_expense_category", "hala_disbursement"):
+		frappe.reload_doc("hala", "doctype", name)
+	ensure_disbursement_setup()
+	for name in ("hala_disbursement_payment", "hala_disbursement_expense"):
+		frappe.reload_doc("hala", "print_format", name)
+	frappe.reload_doc("hala", "page", "hala_booking")
+	if frappe.db.exists("Print Format", "BOOKING"):
+		# Change just the payment-total expression; preserve the site's branding/layout.
+		doc = frappe.get_doc("Print Format", "BOOKING")
+		html = doc.html or ""
+		for newline in ("\r\n", "\n") if "'payment_type': 'Receive'" in html else ():
+			html = html.replace("'payment_type': 'Receive'", "'payment_type': ['in', ['Receive', 'Pay']]")
+			html = html.replace(
+				"'paid_amount'," + newline + "            'base_paid_amount'",
+				"'payment_type',"
+				+ newline
+				+ "            'paid_amount',"
+				+ newline
+				+ "            'base_paid_amount'",
+			)
+			for attribute, indent in (("paid_amount", "    "), ("base_paid_amount", "            ")):
+				old = "booking_payments" + newline + indent + "| sum(attribute='" + attribute + "')"
+				new = (
+					"(booking_payments | selectattr('payment_type', 'equalto', 'Receive') | sum(attribute='"
+					+ attribute
+					+ "'))"
+					+ newline
+					+ indent
+					+ "- (booking_payments | selectattr('payment_type', 'equalto', 'Pay') | sum(attribute='"
+					+ attribute
+					+ "'))"
+				)
+				html = html.replace(old, new)
+		if html != doc.html:
+			doc.html = html
+			doc.save(ignore_permissions=True)
+	frappe.clear_cache()
+
+
+def ensure_quick_purchase_fields():
+	create_custom_fields(
+		{
+			"Purchase Invoice": [
+				{
+					"fieldname": "custom_hala_quick_purchase",
+					"label": "Hala Quick Purchase",
+					"fieldtype": "Check",
+					"default": "0",
+					"read_only": 1,
+					"hidden": 1,
+					"no_copy": 1,
+					"print_hide": 1,
+					"insert_after": "company",
+				},
+				{
+					"fieldname": "custom_hala_purchase_request_id",
+					"label": "Hala Purchase Request ID",
+					"fieldtype": "Data",
+					"unique": 1,
+					"read_only": 1,
+					"hidden": 1,
+					"no_copy": 1,
+					"print_hide": 1,
+					"insert_after": "custom_hala_quick_purchase",
+				},
+				{
+					"fieldname": "custom_hala_purchase_shift",
+					"label": "Purchase Cashier Shift",
+					"fieldtype": "Link",
+					"options": "POS Opening Shift",
+					"read_only": 1,
+					"no_copy": 1,
+					"print_hide": 1,
+					"insert_after": "custom_hala_purchase_request_id",
+				},
+				{
+					"fieldname": "custom_hala_purchase_profile",
+					"label": "Purchase Cashier Profile",
+					"fieldtype": "Link",
+					"options": "POS Profile",
+					"read_only": 1,
+					"no_copy": 1,
+					"print_hide": 1,
+					"insert_after": "custom_hala_purchase_shift",
+				},
+				{
+					"fieldname": "custom_hala_purchase_cashier",
+					"label": "Purchase Cashier",
+					"fieldtype": "Link",
+					"options": "User",
+					"read_only": 1,
+					"no_copy": 1,
+					"print_hide": 1,
+					"insert_after": "custom_hala_purchase_profile",
+				},
+			]
+		},
+		update=True,
+	)
+
+
+def install_quick_purchase():
+	ensure_quick_purchase_fields()
+	frappe.reload_doc("hala", "page", "hala_booking")
+	frappe.clear_cache()
