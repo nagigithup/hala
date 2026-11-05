@@ -63,11 +63,11 @@
 				<div class="hala-purchase-flags" data-flags></div>
 				<div class="hala-purchase-fields" data-stock></div>
 				<div class="hala-purchase-fields" data-payment></div>
-				<div data-items></div>
-				<p class="text-muted">إجمالي السطر قبل ضرائب ورسوم المستند. تعديل الكمية أو الإجمالي يعيد حساب سعر الوحدة؛ تعديل السعر يعيد حساب الإجمالي. قد تتضمن الأسعار ضريبة حسب القالب.</p>
+				<div class="hala-purchase-items" data-items></div>
+				<p class="text-muted hala-purchase-help">إجمالي السطر قبل ضرائب ورسوم المستند. تعديل الكمية أو الإجمالي يعيد حساب سعر الوحدة؛ تعديل السعر يعيد حساب الإجمالي. قد تتضمن الأسعار ضريبة حسب القالب.</p>
 				<div class="hala-purchase-fields" data-tax></div>
 				<div class="hala-purchase-totals" data-totals></div>
-				<details><summary>العملة والخصومات وتفاصيل إضافية</summary><div class="hala-purchase-fields" data-extra></div></details>
+				<details class="hala-purchase-extra"><summary>العملة والخصومات وتفاصيل إضافية</summary><div class="hala-purchase-fields" data-extra></div></details>
 				<div class="text-muted" data-notice role="status"></div>
 			</div>`).insertBefore(this.$layout);
 			const groups = {

@@ -22,6 +22,22 @@
 			route: ["hala-receipt"],
 		},
 		{
+			id: "disbursement",
+			label: "سند صرف",
+			icon: "banknote-arrow-up",
+			script: "disbursement",
+			controller: "HalaDisbursement",
+			roles: ["سند الصرف", "System Manager"],
+		},
+		{
+			id: "purchase",
+			label: "فاتورة مشتريات",
+			icon: "shopping-cart",
+			script: "quick_purchase",
+			controller: "HalaQuickPurchase",
+			roles: ["Purchase Manager", "System Manager"],
+		},
+		{
 			id: "booking-history",
 			label: "سجل فواتير الحجز",
 			icon: "clock",
@@ -30,19 +46,44 @@
 		},
 	];
 
+	const is_visible = (item) => !item.roles || item.roles.some(role => frappe.user?.has_role(role));
+
 	function navigation_item(item, active) {
 		const current = item.id === active;
+		const tag = item.script ? "button" : "a";
 		return `
-			<a class="hala-cashier-nav-item${current ? " is-active" : ""}"
-				href="${item.href}" data-hala-nav="${item.id}"
+			<${tag} class="hala-cashier-nav-item${current ? " is-active" : ""}"
+				${item.script ? 'type="button"' : `href="${item.href}"`} data-hala-nav="${item.id}"
 				${current ? 'aria-current="page"' : ""}>
 				<span class="hala-cashier-nav-icon">${frappe.utils.icon(item.icon, "md")}</span>
 				<span>${item.label}</span>
-			</a>
+			</${tag}>
 		`;
 	}
 
+	function set_active(page, active) {
+		page.main.find("[data-hala-nav]").each((_, element) => {
+			const current = element.dataset.halaNav === active;
+			$(element).toggleClass("is-active", current).attr("aria-current", current ? "page" : null);
+		});
+	}
+
+	async function show_action(page, id) {
+		const item = navigation.find(item => item.id === id && item.script);
+		if (!item || !is_visible(item)) return;
+		await frappe.require(`/assets/hala/js/${item.script}.js`);
+		const key = `hala_nav_${id}`;
+		page[key] = page[key] || new window[item.controller](page);
+		await page[key].show();
+		set_active(page, id);
+		page.main.find(".hala-cashier-sidebar").removeClass("is-open");
+		page.main.find(".hala-cashier-menu-toggle").attr("aria-expanded", "false");
+		page[key].dialog.$wrapper.off("hidden.bs.modal.hala_nav").one("hidden.bs.modal.hala_nav", () => set_active(page, page.hala_nav_active));
+		return page[key];
+	}
+
 	function mount({page, active, page_class, content}) {
+		page.hala_nav_active = active;
 		page.main.addClass("hala-cashier-desk-page");
 		page.main.html(`
 			<div class="hala-cashier-layout" dir="rtl">
@@ -58,7 +99,7 @@
 						</button>
 					</div>
 					<nav class="hala-cashier-nav">
-						${navigation.map((item) => navigation_item(item, active)).join("")}
+						${navigation.filter(is_visible).map((item) => navigation_item(item, active)).join("")}
 					</nav>
 				</aside>
 				<div class="hala-cashier-content">
@@ -79,7 +120,12 @@
 
 		$layout.on("click", "[data-hala-nav]", (event) => {
 			const item = navigation.find(({id}) => id === event.currentTarget.dataset.halaNav);
-			if (!item || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+			if (!item || !is_visible(item)) return;
+			if (item.script) {
+				event.preventDefault();
+				return show_action(page, item.id);
+			}
+			if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
 
 			event.preventDefault();
 			frappe.set_route(...item.route);
@@ -88,5 +134,5 @@
 		return $layout.find(".hala-cashier-page-shell");
 	}
 
-	window.halaCashierLayout = {mount};
+	window.halaCashierLayout = {mount, show_action};
 })();

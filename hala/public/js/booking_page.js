@@ -21,17 +21,7 @@ window.HalaBookingPage = class HalaBookingPage {
 		this.printer = frappe.require("/assets/hala/js/smart_print.js");
 		this.render_shell();
 		if (!history) this.make_header_controls();
-		if (!history && (frappe.user.has_role("سند الصرف") || frappe.user.has_role("System Manager"))) {
-			this.page.add_inner_button("سند صرف", async () => {
-				await frappe.require("/assets/hala/js/disbursement.js");
-				this.disbursement = this.disbursement || new window.HalaDisbursement(this.page);
-				return this.disbursement.show();
-			});
-		}
 		this.purchase_only = !history && frappe.user?.has_role("Purchase Manager") && !frappe.user?.has_role("Hala Portal User") && !frappe.user?.has_role("System Manager");
-		if (!history && (frappe.user?.has_role("Purchase Manager") || frappe.user?.has_role("System Manager"))) {
-			this.page.add_inner_button("فاتورة مشتريات", () => this.show_purchase());
-		}
 		if (this.purchase_only) this.$shell.hide();
 		this.bind_events();
 		if (history) this.make_history();
@@ -182,9 +172,7 @@ window.HalaBookingPage = class HalaBookingPage {
 	}
 
 	async show_purchase() {
-		await frappe.require("/assets/hala/js/quick_purchase.js");
-		this.purchase = this.purchase || new window.HalaQuickPurchase();
-		return this.purchase.show();
+		return window.halaCashierLayout.show_action(this.page, "purchase");
 	}
 
 	async show() {

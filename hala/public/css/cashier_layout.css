@@ -84,6 +84,16 @@
 	transition: background-color 120ms ease, color 120ms ease;
 }
 
+.hala-cashier-nav-item:where(button) {
+	width: 100%;
+	border: 0;
+	background: transparent;
+	text-align: inherit;
+	font-family: inherit;
+	font-size: inherit;
+	line-height: inherit;
+}
+
 .hala-cashier-nav-item:hover {
 	background: var(--control-bg);
 	color: var(--text-color);

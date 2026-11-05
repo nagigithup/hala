@@ -1,4 +1,339 @@
-body.hala-native-purchase:not(.hala-purchase-advanced) .navbar,body.hala-native-purchase:not(.hala-purchase-advanced) .page-head,body.hala-native-purchase .layout-side-section,body.hala-native-purchase .standard-sidebar{display:none!important}
-body.hala-native-purchase .layout-main-section-wrapper{margin:0!important;padding:0!important}body.hala-native-purchase .page-container{padding:0!important}.hala-native-purchase-pane{padding:16px;background:var(--card-bg,#fff);border-radius:12px;text-align:right;direction:rtl}.hala-purchase-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.hala-purchase-heading h2{font-size:22px}.hala-purchase-tools{display:flex;gap:8px;flex-wrap:wrap}.hala-purchase-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.hala-purchase-flags{display:flex;gap:28px;flex-wrap:wrap;padding:16px;margin:10px 0 18px;border:1px solid var(--border-color,#ddd);border-radius:10px;background:var(--subtle-fg,#f7f8fa)}.hala-purchase-flags .frappe-control{margin:0!important;min-width:180px}.hala-purchase-flags label{font-size:17px;font-weight:700}.hala-purchase-flags input[type=checkbox]{width:19px;height:19px;vertical-align:middle}.hala-purchase-totals{display:flex;justify-content:flex-end;gap:20px;flex-wrap:wrap;padding:16px 0}.hala-purchase-totals span,.hala-purchase-totals strong{display:block}.hala-native-purchase-pane .control-label,.hala-native-purchase-pane input,.hala-native-purchase-pane textarea{text-align:right}.hala-native-purchase-pane .grid-heading-row{direction:rtl}.hala-purchase-return{margin:12px}.hala-purchase-iframe{width:100%;height:74vh;border:0;background:#fff}.hala-purchase-history{max-height:270px;overflow:auto;padding:12px}.hala-purchase-history td{white-space:nowrap}@media(max-width:800px){.hala-purchase-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.hala-purchase-heading{align-items:flex-start;flex-direction:column}}@media(max-width:500px){.hala-purchase-fields{grid-template-columns:1fr}.hala-native-purchase-pane{padding:10px}.hala-purchase-flags{gap:14px}}
-body.hala-native-purchase:not(.hala-purchase-advanced) .body-sidebar-container{display:none!important}body.hala-native-purchase:not(.hala-purchase-advanced) .main-section{width:100%!important;margin:0!important}
-body.hala-native-purchase:not(.hala-purchase-advanced) .body-sidebar,body.hala-native-purchase:not(.hala-purchase-advanced) .dock,body.hala-native-purchase:not(.hala-purchase-advanced) .sidebar-edge,body.hala-native-purchase:not(.hala-purchase-advanced) .sidebar-toggle{display:none!important}
+body.hala-native-purchase:not(.hala-purchase-advanced) :is(.navbar, .page-head, .body-sidebar-container, .body-sidebar, .dock, .sidebar-edge, .sidebar-toggle),
+body.hala-native-purchase :is(.layout-side-section, .standard-sidebar) {
+	display: none !important;
+}
+
+body.hala-native-purchase:not(.hala-purchase-advanced) .main-section {
+	width: 100% !important;
+	margin: 0 !important;
+}
+
+body.hala-native-purchase .layout-main-section-wrapper {
+	margin: 0 !important;
+	padding: 0 !important;
+}
+
+body.hala-native-purchase .page-container {
+	padding: 0 !important;
+}
+
+.hala-purchase-dialog .modal-dialog {
+	width: calc(100% - 32px);
+	max-width: 1280px;
+}
+
+.hala-purchase-dialog :is(.modal-header, .modal-body) {
+	padding: 16px 20px;
+	text-align: right;
+}
+
+.hala-purchase-dialog .modal-body {
+	background: var(--subtle-fg, #f7f8fa);
+}
+
+.hala-purchase-dialog-pane {
+	display: grid;
+	gap: 16px;
+	min-width: 0;
+}
+
+.hala-purchase-tools {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+:is(.hala-purchase-tools, .hala-purchase-pagination) .btn {
+	min-height: 36px;
+	padding: 7px 12px;
+	white-space: normal;
+}
+
+.hala-purchase-iframe {
+	display: block;
+	width: 100%;
+	height: 74vh;
+	min-height: 440px;
+	border: 1px solid var(--border-color, #e2e2e2);
+	border-radius: var(--border-radius-lg, 12px);
+	background: var(--card-bg, #fff);
+}
+
+.hala-native-purchase-pane {
+	display: grid;
+	gap: 20px;
+	min-width: 0;
+	padding: 20px 22px;
+	background: var(--card-bg, #fff);
+	color: var(--text-color, #333);
+	text-align: right;
+	direction: rtl;
+}
+
+.hala-purchase-heading {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid var(--border-color, #e2e2e2);
+}
+
+.hala-purchase-heading h2 {
+	margin: 0 0 8px;
+	font-size: var(--text-xl, 20px);
+	line-height: 1.5;
+}
+
+.hala-purchase-heading [data-docname] {
+	color: var(--text-muted, #687178);
+	font-size: var(--text-sm, 13px);
+	overflow-wrap: anywhere;
+}
+
+.hala-purchase-fields {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	align-items: start;
+	gap: 16px;
+}
+
+.hala-purchase-fields:not(:has(> .frappe-control:not(.hide-control))) {
+	display: none;
+}
+
+.hala-native-purchase-pane :is(.frappe-control, .form-group) {
+	min-width: 0;
+	margin-bottom: 0;
+}
+
+.hala-native-purchase-pane :is(.control-label, .help-box) {
+	text-align: start;
+}
+
+.hala-native-purchase-pane .control-label {
+	margin-bottom: 6px;
+}
+
+.hala-native-purchase-pane :is(input, textarea, select) {
+	text-align: start;
+}
+
+.hala-native-purchase-pane :is(.control-input .form-control, .control-value) {
+	min-height: 36px;
+}
+
+.hala-purchase-fields [data-fieldtype="Small Text"] {
+	grid-column: 1 / -1;
+}
+
+.hala-purchase-flags {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16px;
+	padding: 16px;
+	border: 1px solid var(--border-color, #e2e2e2);
+	border-radius: var(--border-radius-lg, 12px);
+	background: var(--subtle-fg, #f7f8fa);
+}
+
+.hala-purchase-flags .checkbox {
+	margin: 0;
+}
+
+.hala-purchase-flags .checkbox > label {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-height: 36px;
+	margin: 0;
+	padding: 0;
+	font-size: var(--text-base, 14px);
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.hala-purchase-flags .input-area {
+	display: flex;
+	align-items: center;
+}
+
+.hala-purchase-flags input[type="checkbox"] {
+	position: static;
+	width: 18px;
+	height: 18px;
+	margin: 0 !important;
+	flex: 0 0 auto;
+}
+
+.hala-purchase-items {
+	display: grid;
+	gap: 16px;
+	min-width: 0;
+}
+
+.hala-purchase-items .form-grid {
+	min-width: 960px;
+}
+
+.hala-purchase-items .form-grid:has(.grid-row-open) {
+	min-width: 0;
+}
+
+.hala-purchase-items :is(.grid-heading-row, .data-row) {
+	direction: rtl;
+	text-align: right;
+}
+
+.hala-purchase-items .grid-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.hala-purchase-help,
+.hala-native-purchase-pane [data-notice] {
+	margin: 0;
+	line-height: 1.8;
+	font-size: var(--text-sm, 13px);
+}
+
+.hala-purchase-totals {
+	display: grid;
+	grid-template-columns: repeat(5, minmax(0, 1fr));
+	gap: 16px;
+	padding: 16px;
+	border: 1px solid var(--border-color, #e2e2e2);
+	border-radius: var(--border-radius-lg, 12px);
+	background: var(--subtle-fg, #f7f8fa);
+}
+
+.hala-purchase-totals span,
+.hala-purchase-totals strong {
+	display: block;
+	overflow-wrap: anywhere;
+}
+
+.hala-purchase-totals span {
+	margin-bottom: 6px;
+	color: var(--text-muted, #687178);
+	font-size: var(--text-sm, 13px);
+}
+
+.hala-purchase-extra {
+	padding: 16px;
+	border: 1px solid var(--border-color, #e2e2e2);
+	border-radius: var(--border-radius-lg, 12px);
+}
+
+.hala-purchase-extra summary {
+	color: var(--text-color, #333);
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.hala-purchase-extra[open] summary {
+	margin-bottom: 16px;
+}
+
+.hala-purchase-return {
+	margin: 12px;
+}
+
+.hala-purchase-history {
+	min-width: 0;
+	padding: 16px;
+	border: 1px solid var(--border-color, #e2e2e2);
+	border-radius: var(--border-radius-lg, 12px);
+	background: var(--card-bg, #fff);
+}
+
+.hala-purchase-history h4 {
+	margin: 0 0 16px;
+	font-size: var(--text-base, 14px);
+	text-align: start;
+}
+
+.hala-purchase-history-table {
+	max-height: 270px;
+	overflow: auto;
+}
+
+.hala-purchase-history .table {
+	margin: 0;
+}
+
+.hala-purchase-history :is(th, td) {
+	padding: 10px 12px;
+	text-align: start;
+	vertical-align: middle;
+	white-space: nowrap;
+}
+
+.hala-purchase-history th {
+	background: var(--subtle-fg, #f7f8fa);
+	color: var(--text-muted, #687178);
+	font-size: var(--text-xs, 12px);
+}
+
+.hala-purchase-history .btn-link {
+	padding: 0;
+	font-size: inherit;
+}
+
+.hala-purchase-pagination {
+	display: flex;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+@media (max-width: 991px) {
+	.hala-purchase-heading {
+		flex-direction: column;
+	}
+
+	.hala-purchase-fields {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.hala-purchase-totals {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+}
+
+@media (max-width: 575px) {
+	.hala-purchase-dialog .modal-dialog {
+		width: auto;
+		margin: 8px;
+	}
+
+	.hala-purchase-dialog :is(.modal-header, .modal-body),
+	.hala-native-purchase-pane {
+		padding: 16px 12px;
+	}
+
+	.hala-purchase-dialog-pane,
+	.hala-native-purchase-pane {
+		gap: 16px;
+	}
+
+	.hala-purchase-fields,
+	.hala-purchase-flags {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.hala-purchase-tools {
+		width: 100%;
+	}
+
+	.hala-purchase-tools .btn {
+		flex: 1 1 auto;
+	}
+
+	.hala-purchase-totals {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
